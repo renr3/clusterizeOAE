@@ -38,7 +38,7 @@ footer, header, .viewerBadge_container__1QSob {
 """, unsafe_allow_html=True)
 
 # Minimal title
-st.markdown("## 🗺️ Ferramenta de análise de lotes")
+# st.markdown("## 🗺️ Ferramenta de análise de lotes")
 
 # Create tabs
 tab1, tab2 = st.tabs(["📊 Ferramenta", "📖 Instruções"])
