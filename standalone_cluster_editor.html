@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Ferramenta de Análise de Lotes - Independente</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #sidebar {
+            width: 400px;
+            background: #f5f5f5;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .custom-marker svg text {
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        h2 {
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        h3 {
+            font-size: 15px;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            color: #f57c00;
+            font-weight: 700;
+        }
+        
+        .upload-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 2px dashed #2196F3;
+        }
+
+        .overlay-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 2px dashed #FF9800;
+        }
+
+        #overlaySection {
+            display: none;
+        }
+
+        #overlaySection.active {
+            display: block;
+        }
+
+        .dataset-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .dataset-primary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .dataset-overlay {
+            background: #FF9800;
+            color: white;
+        }
+
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #ffeaa7;
+        }
+
+        .btn-warning {
+            background: #FF9800;
+        }
+
+        .btn-warning:hover {
+            background: #F57C00;
+        }
+        
+        .upload-box.loaded {
+            border-color: #4CAF50;
+            background: #f1f8f4;
+        }
+        
+        .stats-box {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .stat-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .stat-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .control-box {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #2196F3;
+        }
+        
+        .btn-primary:hover {
+            background: #0b7dda;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+        }
+        
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        
+        .selected-point {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        
+        .cluster-info {
+            background: #fff9c4;
+            border: 4px solid #ffa726;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        
+        .cluster-info h3 {
+            color: #f57c00;
+            margin: 0 0 12px 0;
+            font-size: 16px;
+        }
+        
+        .cluster-detail {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .cluster-detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .cluster-detail-value {
+            color: #333;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        
+        .target-cluster-info {
+            background: #e1f5fe;
+            border: 2px solid #29b6f6;
+            padding: 12px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        
+        .target-cluster-info h4 {
+            color: #0277bd;
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .instructions strong {
+            color: #1976d2;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .divider {
+            border-top: 2px solid #ddd;
+            margin: 15px 0;
+        }
+        
+        #content {
+            display: none;
+        }
+        
+        #content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h1>🗺️ Ferramenta de Análise de Lotes</h1>
+        
+        <div class="upload-box" id="uploadBox">
+            <h2>📁 Carregar Dados</h2>
+            <p style="color: #666; font-size: 13px; margin: 10px 0;">
+                Selecione um arquivo Excel (.xlsx) com os dados dos pontos e clusters.
+            </p>
+            <input type="file" id="fileInput" accept=".xlsx">
+            <button id="loadBtn" class="btn-primary">Carregar Arquivo</button>
+            <div id="loadStatus"></div>
+        </div>
+
+        <div id="overlaySection" class="overlay-box">
+            <h2>➕ Sobrepor Dados Adicionais</h2>
+            <p style="color: #666; font-size: 13px; margin: 10px 0;">
+                Adicione outro arquivo Excel para sobrepor ao mapa atual.
+            </p>
+            <input type="file" id="overlayFileInput" accept=".xlsx">
+            <button id="overlayBtn" class="btn-warning">Sobrepor Arquivo</button>
+            <div id="overlayStatus"></div>
+        </div>
+        
+        <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>Nenhum dado carregado</h3>
+            <p>Carregue um arquivo Excel para começar a análise</p>
+        </div>
+        
+        <div id="content">
+            <div class="success-message" id="loadedMessage" style="display:none;">
+                ✅ Dados carregados com sucesso!
+            </div>
+            
+            <div class="instructions">
+                <strong>Instruções:</strong><br>
+                1. Clique em qualquer ponto do mapa<br>
+                2. Revise as estatísticas do cluster atual<br>
+                3. Selecione um novo lote no menu suspenso<br>
+                4. Clique em "Reatribuir Ponto" se necessário<br>
+                5. Use "Sobrepor Dados" para adicionar mais pontos<br>
+                6. Exporte para Excel quando terminar
+            </div>
+            
+            <div class="control-box">
+                <h2>Ponto Selecionado</h2>
+                <div id="selectedPoint">Clique em um ponto para selecioná-lo</div>
+                
+                <div id="currentClusterInfo"></div>
+                
+                <div id="reassignControl" style="display:none;">
+                    <div class="divider"></div>
+                    <h2>Reatribuir ao Lote</h2>
+                    <select id="targetCluster"></select>
+                    <div id="targetClusterInfo"></div>
+                    <button id="reassignBtn">Reatribuir Ponto</button>
+                </div>
+            </div>
+            
+            <div class="stats-box">
+                <h2>Estatísticas Gerais</h2>
+                <div class="stat-item">
+                    <span class="stat-label">Total de Pontos:</span>
+                    <span class="stat-value" id="totalPoints">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Pontos Principais:</span>
+                    <span class="stat-value" id="primaryPoints">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Pontos Sobrepostos:</span>
+                    <span class="stat-value" id="overlayPoints">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total de Clusters:</span>
+                    <span class="stat-value" id="totalClusters">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Custo Total:</span>
+                    <span class="stat-value" id="totalCost">-</span>
+                </div>
+            </div>
+            
+            <button id="exportBtn" class="btn-primary">📊 Exportar para Excel</button>
+            <button id="clearBtn" class="btn-danger" style="margin-top: 10px;">🗑️ Limpar Dados</button>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Global state
+        let pointsData = [];
+        let unidadesClusters = {};
+        let markers = {};
+        let centroidMarkers = {};
+        let selectedPoint = null;
+        let map = null;
+        let datasetCounter = 0; // Track which dataset points belong to
+        let datasetFilenames = {}; // Add this line
+
+        // Add the helper functions at the top of the script section:
+        function generateHighContrastColors (n) {
+            const colors = [];
+            
+            // Use golden ratio for hue distribution
+            const goldenRatioConjugate = 0.618033988749895;
+            let hue = Math.random();
+            
+            for (let i = 0; i < n; i++) {
+                hue += goldenRatioConjugate;
+                hue %= 1;
+                
+                const h = hue * 360;
+                
+                // Alternate between high saturation and moderate saturation
+                // Alternate between lighter and darker colors
+                const s = (i % 2 === 0) ? 85 : 65; // High contrast in saturation
+                const l = (i % 3 === 0) ? 40 : (i % 3 === 1) ? 60 : 50; // Vary lightness more
+                
+                colors.push(hslToHex(h, s, l));
+            }
+            
+            return colors;
+        }
+
+        function hslToHex(h, s, l) {
+            s /= 100;
+            l /= 100;
+            
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = l - c / 2;
+            let r = 0, g = 0, b = 0;
+            
+            if (0 <= h && h < 60) {
+                r = c; g = x; b = 0;
+            } else if (60 <= h && h < 120) {
+                r = x; g = c; b = 0;
+            } else if (120 <= h && h < 180) {
+                r = 0; g = c; b = x;
+            } else if (180 <= h && h < 240) {
+                r = 0; g = x; b = c;
+            } else if (240 <= h && h < 300) {
+                r = x; g = 0; b = c;
+            } else if (300 <= h && h < 360) {
+                r = c; g = 0; b = x;
+            }
+            
+            const toHex = (val) => {
+                const hex = Math.round((val + m) * 255).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            };
+            
+            return '#' + toHex(r) + toHex(g) + toHex(b);
+        }
+        
+        function getMarkerShape(dataset, size, unidadeColor, clusterColor, nota) {
+            const shapes = [
+                // Shape 0: Circle (original/primary dataset)
+                (size, uColor, cColor, nota) => `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="white" />
+                        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 4}" fill="${uColor}" />
+                        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 6}" fill="white" />
+                        <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 7}" fill="${cColor}" opacity="0.85" />
+                        <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`,
+                
+                // Shape 1: Square
+                (size, uColor, cColor, nota) => `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="2" width="${size-4}" height="${size-4}" fill="white" />
+                        <rect x="4" y="4" width="${size-8}" height="${size-8}" fill="${uColor}" />
+                        <rect x="6" y="6" width="${size-12}" height="${size-12}" fill="white" />
+                        <rect x="7" y="7" width="${size-14}" height="${size-14}" fill="${cColor}" opacity="0.85" />
+                        <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`,
+                
+                // Shape 2: Triangle (pointing up)
+                (size, uColor, cColor, nota) => `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="${size/2},2 ${size-2},${size-2} 2,${size-2}" fill="white" />
+                        <polygon points="${size/2},4 ${size-4},${size-4} 4,${size-4}" fill="${uColor}" />
+                        <polygon points="${size/2},6 ${size-6},${size-6} 6,${size-6}" fill="white" />
+                        <polygon points="${size/2},7 ${size-7},${size-7} 7,${size-7}" fill="${cColor}" opacity="0.85" />
+                        <text x="${size/2}" y="${size/2 + 3}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`,
+                
+                // Shape 3: Diamond
+                (size, uColor, cColor, nota) => `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="${size/2},2 ${size-2},${size/2} ${size/2},${size-2} 2,${size/2}" fill="white" />
+                        <polygon points="${size/2},4 ${size-4},${size/2} ${size/2},${size-4} 4,${size/2}" fill="${uColor}" />
+                        <polygon points="${size/2},6 ${size-6},${size/2} ${size/2},${size-6} 6,${size/2}" fill="white" />
+                        <polygon points="${size/2},7 ${size-7},${size/2} ${size/2},${size-7} 7,${size/2}" fill="${cColor}" opacity="0.85" />
+                        <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`,
+                
+                // Shape 4: Pentagon
+                (size, uColor, cColor, nota) => `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="${size/2},2 ${size-2},${size*0.4} ${size-5},${size-2} ${5},${size-2} 2,${size*0.4}" fill="white" />
+                        <polygon points="${size/2},4 ${size-4},${size*0.4} ${size-7},${size-4} ${7},${size-4} 4,${size*0.4}" fill="${uColor}" />
+                        <polygon points="${size/2},6 ${size-6},${size*0.4} ${size-9},${size-6} ${9},${size-6} 6,${size*0.4}" fill="white" />
+                        <polygon points="${size/2},7 ${size-7},${size*0.4} ${size-10},${size-7} ${10},${size-7} 7,${size*0.4}" fill="${cColor}" opacity="0.85" />
+                        <text x="${size/2}" y="${size/2 + 2}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`,
+                
+                // Shape 5: Hexagon
+                (size, uColor, cColor, nota) => `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="${size*0.3},2 ${size*0.7},2 ${size-2},${size/2} ${size*0.7},${size-2} ${size*0.3},${size-2} 2,${size/2}" fill="white" />
+                        <polygon points="${size*0.3},4 ${size*0.7},4 ${size-4},${size/2} ${size*0.7},${size-4} ${size*0.3},${size-4} 4,${size/2}" fill="${uColor}" />
+                        <polygon points="${size*0.3},6 ${size*0.7},6 ${size-6},${size/2} ${size*0.7},${size-6} ${size*0.3},${size-6} 6,${size/2}" fill="white" />
+                        <polygon points="${size*0.3},7 ${size*0.7},7 ${size-7},${size/2} ${size*0.7},${size-7} ${size*0.3},${size-7} 7,${size/2}" fill="${cColor}" opacity="0.85" />
+                        <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`,
+                
+                // Shape 6: Star
+                (size, uColor, cColor, nota) => {
+                    const cx = size/2, cy = size/2, outerR = size/2 - 2, innerR = size/5;
+                    const points = [];
+                    for (let i = 0; i < 5; i++) {
+                        const outerAngle = (i * 72 - 90) * Math.PI / 180;
+                        const innerAngle = (i * 72 - 90 + 36) * Math.PI / 180;
+                        points.push(`${cx + outerR * Math.cos(outerAngle)},${cy + outerR * Math.sin(outerAngle)}`);
+                        points.push(`${cx + innerR * Math.cos(innerAngle)},${cy + innerR * Math.sin(innerAngle)}`);
+                    }
+                    return `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="${points.join(' ')}" fill="white" stroke="${uColor}" stroke-width="2"/>
+                        <polygon points="${points.join(' ')}" fill="${cColor}" opacity="0.85" transform="scale(0.7) translate(${size*0.21}, ${size*0.21})"/>
+                        <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central" 
+                            font-family="Arial, sans-serif" font-size="${size/2.8}" font-weight="900" 
+                            fill="white" stroke="black" stroke-width="1.5" 
+                            paint-order="stroke">${nota}</text>
+                    </svg>`;
+                }
+            ];
+            
+            // Cycle through shapes if we have more datasets than shapes
+            const shapeIndex = dataset % shapes.length;
+            return shapes[shapeIndex](size, unidadeColor, clusterColor, Math.round(nota));
+        }
+
+        const colors = [
+            '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00',
+            '#ffff33', '#a65628', '#f781bf', '#999999', '#8dd3c7',
+            '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69',
+            '#fccde5', '#d9d9d9', '#bc80bd', '#ccebc5', '#ffed6f'
+        ];
+        
+        // Initialize map
+        function initMap() {
+            if (map) {
+                map.remove();
+            }
+            map = L.map('map').setView([-15.7801, -47.9292], 4); // Brazil center
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+        
+        // Load Excel file
+        /* document.getElementById('loadBtn').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Por favor, selecione um arquivo primeiro!', 'error');
+                return;
+            }
+            
+            showStatus('Carregando arquivo...', 'info');
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    // Read the "All Points" sheet
+                    const worksheet = workbook.Sheets['All Points'];
+                    if (!worksheet) {
+                        throw new Error('Sheet "All Points" não encontrada no arquivo Excel');
+                    }
+                    
+                    const importedData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (importedData.length === 0) {
+                        throw new Error('Arquivo Excel está vazio');
+                    }
+                    
+                    // Transform data to internal format
+                    pointsData = importedData.map((row, idx) => ({
+                        id: row['Point ID'] || idx,
+                        lat: parseFloat(row['Latitude'] || row['LAT']),
+                        lon: parseFloat(row['Longitude'] || row['LONG']),
+                        cluster: parseInt(row['Cluster ID']),
+                        unidade_local: String(row['Unidade Local'] || 'N/A'),
+                        sge: String(row['SGE'] || row['Código (SGE)'] || 'N/A'),
+                        nota: parseFloat(row['Nota Consolidada'] || row['NOTA CONSOLIDADA'] || 0),
+                        custo: parseFloat(row['Custo Final (R$)'] || row['Custo final'] || 0),
+                        cluster_label: String(row['Cluster Label'] || `Cluster ${row['Cluster ID']}`),
+                        rodovia: String(row['Rodovia'] || 'N/A'),
+                        km: String(row['km'] || 'N/A'),
+                        municipio: String(row['Município'] || 'N/A'),
+                        status_geral: String(row['Status Geral'] || 'N/A'),
+                        status_detalhado: String(row['Status Detalhado'] || 'N/A')
+                    }));
+                    
+                    // Validate data
+                    const invalidPoints = pointsData.filter(p => isNaN(p.lat) || isNaN(p.lon));
+                    if (invalidPoints.length > 0) {
+                        throw new Error(`${invalidPoints.length} pontos com coordenadas inválidas encontrados`);
+                    }
+                    
+                    // Build unidadesClusters mapping
+                    unidadesClusters = {};
+                    pointsData.forEach(point => {
+                        if (!unidadesClusters[point.unidade_local]) {
+                            unidadesClusters[point.unidade_local] = new Set();
+                        }
+                        unidadesClusters[point.unidade_local].add(point.cluster);
+                    });
+                    
+                    // Convert Sets to sorted arrays
+                    Object.keys(unidadesClusters).forEach(key => {
+                        unidadesClusters[key] = Array.from(unidadesClusters[key]).sort((a, b) => a - b);
+                    });
+                    
+                    // Initialize map and display data
+                    initMap();
+                    createMarkers();
+                    updateStatistics();
+                    
+                    // Show content, hide empty state
+                    document.getElementById('emptyState').style.display = 'none';
+                    document.getElementById('content').classList.add('active');
+                    document.getElementById('uploadBox').classList.add('loaded');
+                    document.getElementById('loadedMessage').style.display = 'block';
+                    
+                    showStatus(`✅ ${pointsData.length} pontos carregados com sucesso!`, 'success');
+                    
+                    // Center map on data
+                    const lats = pointsData.map(p => p.lat);
+                    const lons = pointsData.map(p => p.lon);
+                    const bounds = [
+                        [Math.min(...lats), Math.min(...lons)],
+                        [Math.max(...lats), Math.max(...lons)]
+                    ];
+                    map.fitBounds(bounds, {padding: [50, 50]});
+                    
+                } catch (error) {
+                    showStatus(`❌ Erro ao carregar arquivo: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            };
+            
+            reader.onerror = function() {
+                showStatus('❌ Erro ao ler arquivo', 'error');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }); */
+
+        document.getElementById('loadBtn').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Por favor, selecione um arquivo primeiro!', 'error', 'loadStatus');
+                return;
+            }
+            
+            showStatus('Carregando arquivo...', 'info', 'loadStatus');
+            loadExcelFile(file, false);
+        });
+
+        document.getElementById('overlayBtn').addEventListener('click', () => {
+            const fileInput = document.getElementById('overlayFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Por favor, selecione um arquivo primeiro!', 'error', 'overlayStatus');
+                return;
+            }
+            
+            showStatus('Sobrepondo arquivo...', 'info', 'overlayStatus');
+            loadExcelFile(file, true);
+        });
+
+        function loadExcelFile(file, isOverlay) {
+            const reader = new FileReader();
+            const statusDiv = isOverlay ? 'overlayStatus' : 'loadStatus';
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    const worksheet = workbook.Sheets['All Points'];
+                    if (!worksheet) {
+                        throw new Error('Sheet "All Points" não encontrada no arquivo Excel');
+                    }
+                    
+                    const importedData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (importedData.length === 0) {
+                        throw new Error('Arquivo Excel está vazio');
+                    }
+                    
+                    // Increment dataset counter for overlay
+                    if (isOverlay) {
+                        datasetCounter++;
+                        datasetFilenames[datasetCounter] = file.name; // Store filename
+                    } else {
+                        datasetFilenames[0] = file.name; // Store primary filename too
+                    }
+                    
+                    // Get the highest existing cluster ID to avoid conflicts
+                    const maxExistingCluster = pointsData.length > 0 
+                        ? Math.max(...pointsData.map(p => p.cluster))
+                        : -1;
+                    
+                    // Transform data - ADD 'dataset' field to each point
+                    const newPoints = importedData.map((row, idx) => {
+                        const originalCluster = parseInt(row['Cluster ID']);
+                        //Prevent a new overlay from merging with previous points, by offseting their cluster IDs
+                        const adjustedCluster = isOverlay 
+                            ? originalCluster + maxExistingCluster + 1000 * datasetCounter
+                            : originalCluster;
+                        
+                        return {
+                            id: (isOverlay ? 'overlay_' + datasetCounter + '_' : '') + (row['Point ID'] || idx),
+                            lat: parseFloat(row['Latitude'] || row['LAT']),
+                            lon: parseFloat(row['Longitude'] || row['LONG']),
+                            cluster: adjustedCluster,
+                            unidade_local: String(row['Unidade Local'] || 'N/A'),
+                            sge: String(row['SGE'] || row['Código (SGE)'] || 'N/A'),
+                            nota: parseFloat(row['Nota Consolidada'] || row['NOTA CONSOLIDADA'] || 0),
+                            custo: parseFloat(row['Custo Final (R$)'] || row['Custo final'] || 0),
+                            cluster_label: String(row['Cluster Label'] || `Cluster ${adjustedCluster}`),
+                            rodovia: String(row['Rodovia'] || 'N/A'),
+                            km: String(row['km'] || 'N/A'),
+                            municipio: String(row['Município'] || 'N/A'),
+                            status_geral: String(row['Status Geral'] || 'N/A'),
+                            status_detalhado: String(row['Status Detalhado'] || 'N/A'),
+                            dataset: isOverlay ? datasetCounter : 0  // This is the added line
+                        };
+                    });
+                    
+                    // Add to existing data instead of replacing
+                    pointsData = pointsData.concat(newPoints);
+
+                    // Rebuild unidadesClusters mapping
+                    unidadesClusters = {};
+                    pointsData.forEach(point => {
+                        if (!unidadesClusters[point.unidade_local]) {
+                            unidadesClusters[point.unidade_local] = new Set();
+                        }
+                        unidadesClusters[point.unidade_local].add(point.cluster);
+                    });
+
+                    // Convert Sets to sorted arrays
+                    Object.keys(unidadesClusters).forEach(key => {
+                        unidadesClusters[key] = Array.from(unidadesClusters[key]).sort((a, b) => a - b);
+                    });
+
+                    // Initialize map if first load
+                    if (!map || !isOverlay) {
+                        initMap();
+                    }
+                    
+                    createMarkers();
+                    updateStatistics();
+                    createUnidadeLegend();
+                    createShapeLegend();
+                    
+                    document.getElementById('emptyState').style.display = 'none';
+                    document.getElementById('content').classList.add('active');
+                    
+                    if (!isOverlay) {
+                        // Hide initial upload box, show overlay section
+                        document.getElementById('uploadBox').style.display = 'none';
+                        document.getElementById('overlaySection').classList.add('active');
+                        document.getElementById('loadedMessage').style.display = 'block';
+                    }
+                    
+                    showStatus(
+                        `✅ ${newPoints.length} pontos ${isOverlay ? 'sobrepostos' : 'carregados'} com sucesso!`, 
+                        'success', 
+                        statusDiv
+                    );
+                    
+                    // ... rest of the code ...
+                    
+                } catch (error) {
+                    showStatus(`❌ Erro ao carregar arquivo: ${error.message}`, 'error', statusDiv);
+                    console.error(error);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+                
+        function showStatus(message, type, divId) {
+            const statusDiv = document.getElementById(divId);
+            statusDiv.className = type === 'error' ? 'error-message' : 
+                                 type === 'success' ? 'success-message' : '';
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function getClusterStats(clusterId) {
+            const clusterPoints = pointsData.filter(p => p.cluster === clusterId);
+            if (clusterPoints.length === 0) return null;
+            
+            const totalCost = clusterPoints.reduce((sum, p) => sum + p.custo, 0);
+            const avgCost = totalCost / clusterPoints.length;
+            
+            return {
+                nPoints: clusterPoints.length,
+                totalCost: totalCost,
+                avgCost: avgCost,
+                label: clusterPoints[0]?.cluster_label || `Cluster ${clusterId}`,
+                unidade_local: clusterPoints[0]?.unidade_local || 'N/A'
+            };
+        }
+        
+        function createCentroidMarkers() {
+            // Remove existing centroid markers
+            Object.values(centroidMarkers).forEach(marker => map.removeLayer(marker));
+            centroidMarkers = {};
+            
+            // Calculate centroids based on current point assignments
+            const clusterGroups = {};
+            pointsData.forEach(point => {
+                if (!clusterGroups[point.cluster]) {
+                    clusterGroups[point.cluster] = [];
+                }
+                clusterGroups[point.cluster].push(point);
+            });
+            
+            // Create centroid marker for each cluster
+            Object.keys(clusterGroups).forEach(clusterId => {
+                const clusterPoints = clusterGroups[clusterId];
+                const centroidLat = clusterPoints.reduce((sum, p) => sum + p.lat, 0) / clusterPoints.length;
+                const centroidLon = clusterPoints.reduce((sum, p) => sum + p.lon, 0) / clusterPoints.length;
+                const color = colors[parseInt(clusterId) % colors.length];
+                const stats = getClusterStats(parseInt(clusterId));
+
+                // Skip if stats is null (shouldn't happen, but safety check)
+                if (!stats) {
+                    console.warn(`No stats found for cluster ${clusterId}`);
+                    return;
+                }
+                                
+                // Create a custom icon for centroid
+                const centroidIcon = L.divIcon({
+                    className: 'custom-centroid-icon',
+                    html: `<div style="
+                        background-color: ${color};
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50% 50% 50% 0;
+                        border: 3px solid white;
+                        transform: rotate(-45deg);
+                        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                    "></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                });
+                
+                const centroidMarker = L.marker([centroidLat, centroidLon], {
+                    icon: centroidIcon,
+                    zIndexOffset: 1000
+                });
+                
+                centroidMarker.bindPopup(`
+                    <div style="min-width: 200px;">
+                        <strong style="font-size: 14px;">${stats.label}</strong><br>
+                        <strong>Centróide</strong><br>
+                        Unidade: ${stats.unidade_local}<br>
+                        Pontos: ${stats.nPoints}<br>
+                        Custo Total: R$ ${stats.totalCost.toLocaleString('pt-BR', {maximumFractionDigits: 0})}<br>
+                        <br>
+                        <div style="border-top: 2px solid #ddd; margin: 10px 0; padding-top: 10px;">
+                            <strong>🎨 Mudar Cor do Lote</strong><br>
+                            <input type="color" id="colorInput_${clusterId}" value="${color}" 
+                                style="width: 100%; height: 40px; margin: 8px 0; cursor: pointer;">
+                            <button onclick="updateClusterColor(${clusterId}, document.getElementById('colorInput_${clusterId}').value)" 
+                                    style="width: 100%; padding: 8px; background: #4CAF50; color: white; 
+                                        border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                Aplicar Nova Cor
+                            </button>
+                        </div>
+                    </div>
+                `);
+
+                // Add click handler for color change
+                // centroidMarker.on('click', function(e) {
+                //     // Prevent map click
+                //     L.DomEvent.stopPropagation(e);
+                    
+                //     // Create color picker popup
+                //     const colorInput = document.createElement('input');
+                //     colorInput.type = 'color';
+                //     colorInput.value = color;
+                //     colorInput.style.width = '100%';
+                //     colorInput.style.height = '40px';
+                //     colorInput.style.cursor = 'pointer';
+                    
+                //     const popup = L.popup()
+                //         .setLatLng(e.latlng)
+                //         .setContent(`
+                //             <div style="text-align: center;">
+                //                 <strong>Mudar cor do ${stats.label}</strong><br>
+                //                 <div id="colorPicker_${clusterId}" style="margin: 10px 0;"></div>
+                //                 <button onclick="updateClusterColor(${clusterId}, document.getElementById('colorInput_${clusterId}').value)" 
+                //                         style="width: 100%; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                //                     Aplicar Nova Cor
+                //                 </button>
+                //             </div>
+                //         `)
+                //         .openOn(map);
+                    
+                //     // Insert color picker after popup opens
+                //     setTimeout(() => {
+                //         const pickerDiv = document.getElementById(`colorPicker_${clusterId}`);
+                //         if (pickerDiv) {
+                //             colorInput.id = `colorInput_${clusterId}`;
+                //             pickerDiv.appendChild(colorInput);
+                //         }
+                //     }, 100);
+                // });
+                
+                centroidMarker.addTo(map);
+                centroidMarkers[clusterId] = centroidMarker;
+            });
+        }
+
+        // Global function to update cluster color
+        function updateClusterColor(clusterId, newColor) {
+            // Update the colors array permanently for this cluster
+            colors[clusterId % colors.length] = newColor;
+            
+            // Recreate all markers to reflect the new color
+            createMarkers();
+            createShapeLegend();
+            
+            // Close the popup
+            map.closePopup();
+            
+            // Show success message
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'success-message';
+            statusDiv.innerHTML = `✅ Cor do cluster ${clusterId} atualizada!`;
+            statusDiv.style.position = 'fixed';
+            statusDiv.style.top = '20px';
+            statusDiv.style.right = '20px';
+            statusDiv.style.zIndex = '10000';
+            document.body.appendChild(statusDiv);
+            
+            setTimeout(() => {
+                statusDiv.remove();
+            }, 3000);
+        }
+        
+        function createMarkers() {
+          // Remove existing point markers
+          Object.values(markers).forEach(marker => map.removeLayer(marker));
+          markers = {};
+          
+          // Create a color mapping for Unidades Locais
+          const unidadeColors = {};
+          
+          // Base palette for first 20
+          const baseColorPalette = [
+                // Primary saturated colors
+                '#FF0000', '#0000FF', '#00FF00', '#FFFF00', '#FF00FF', '#00FFFF',
+                // Dark variants
+                '#8B0000', '#00008B', '#006400', '#B8860B', '#8B008B', '#008B8B',
+                // Bright variants
+                '#FF6347', '#4169E1', '#32CD32', '#FFD700', '#FF1493', '#00CED1',
+                // Orange/Brown spectrum
+                '#FF4500', '#FF8C00', '#D2691E', '#A0522D', '#8B4513', '#CD853F',
+                // Purple/Pink spectrum
+                '#9400D3', '#9932CC', '#BA55D3', '#DA70D6', '#EE82EE', '#FF69B4',
+                // Green spectrum
+                '#228B22', '#2E8B57', '#3CB371', '#66CDAA', '#7FFF00', '#ADFF2F'
+            ];
+          
+          const sortedUnidades = Object.keys(unidadesClusters).sort();
+
+        //   console.log('Sorted Unidades:', sortedUnidades);
+        //   console.log('unidadesClusters object:', unidadesClusters);
+
+          const needsGeneration = sortedUnidades.length > baseColorPalette.length;
+          
+          let generatedColors = [];
+          if (needsGeneration) {
+              const numToGenerate = sortedUnidades.length - baseColorPalette.length;
+              generatedColors = generateHighContrastColors (numToGenerate);
+          }
+          
+          const fullPalette = [...baseColorPalette, ...generatedColors];
+          
+          sortedUnidades.forEach((unidade, index) => {
+              unidadeColors[unidade] = fullPalette[index];
+          });
+
+          // DEBUG: Check the color mapping
+            // console.log('Unidade Colors mapping:', unidadeColors);
+    
+          
+          pointsData.forEach(point => {
+                const clusterColor = colors[point.cluster % colors.length];
+                const unidadeColor = unidadeColors[point.unidade_local] || '#999999';
+                
+                // Get the appropriate shape based on dataset
+                const iconHtml = getMarkerShape(
+                    point.dataset, 
+                    28, 
+                    unidadeColor, 
+                    clusterColor, 
+                    point.nota
+                );
+                
+                const customIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: iconHtml,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14],
+                    popupAnchor: [0, -14]
+                });
+                
+                const marker = L.marker([point.lat, point.lon], {
+                    icon: customIcon
+                });
+                
+                // Add dataset tag to popup
+                const datasetLabel = point.dataset === 0 
+                    ? '<span class="dataset-tag dataset-primary">Principal</span>' 
+                    : `<span class="dataset-tag dataset-overlay">Sobreposto ${point.dataset}</span>`;
+                
+                marker.bindPopup(() => {
+                    // Find the current point data (in case it was updated)
+                    const currentPoint = pointsData.find(p => p.id === point.id) || point;
+                    const currentClusterColor = colors[currentPoint.cluster % colors.length];
+                    const currentUnidadeColor = unidadeColors[currentPoint.unidade_local] || '#999999';
+                    const currentDatasetLabel = datasetFilenames[currentPoint.dataset]
+                        ? `<span class="dataset-tag ${currentPoint.dataset === 0 ? 'dataset-primary' : 'dataset-overlay'}">${datasetFilenames[currentPoint.dataset]}</span>`
+                        : (currentPoint.dataset === 0 
+                            ? '<span class="dataset-tag dataset-primary">Principal</span>' 
+                            : `<span class="dataset-tag dataset-overlay">Sobreposto ${currentPoint.dataset}</span>`);
+                    
+                    return `
+                        <strong>${currentPoint.cluster_label}</strong> ${currentDatasetLabel}<br>
+                        <span style="display:inline-block; width:12px; height:12px; background:${currentUnidadeColor}; border-radius:50%; margin-right:5px;"></span>
+                        Unidade Local: ${currentPoint.unidade_local}<br>
+                        SGE: ${currentPoint.sge}<br>
+                        Nota: ${currentPoint.nota.toFixed(2)}<br>
+                        Custo: R$ ${currentPoint.custo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+                        Rodovia: ${currentPoint.rodovia}<br>
+                        km: ${currentPoint.km}<br>
+                        Município: ${currentPoint.municipio}
+                    `;
+                });
+                
+                marker.on('click', () => selectPoint(point));
+                marker.addTo(map);
+                markers[point.id] = marker;
+            });
+          // Store unidadeColors globally for legend
+          window.currentUnidadeColors = unidadeColors;
+          
+          // Create/update centroid markers
+          createCentroidMarkers();
+      }
+        
+        function createUnidadeLegend() {
+            // Remove existing legend if any
+            if (window.unidadeLegend) {
+                map.removeControl(window.unidadeLegend);
+            }
+            
+            const legend = L.control({position: 'bottomright'});
+            
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                div.style.background = 'white';
+                div.style.padding = '10px';
+                div.style.borderRadius = '5px';
+                div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                div.style.maxHeight = '300px';
+                div.style.overflowY = 'auto';
+                
+                div.innerHTML = '<strong>Unidades Locais</strong><br>';
+                
+                // Use the globally stored colors from createMarkers
+                const unidadeColors = window.currentUnidadeColors || {};
+                
+                Object.keys(unidadeColors).sort().forEach(unidade => {
+                    div.innerHTML += `
+                        <div style="margin: 5px 0;">
+                            <span style="display:inline-block; width:16px; height:16px; background:${unidadeColors[unidade]}; border:2px solid black; border-radius:50%; margin-right:5px;"></span>
+                            ${unidade}
+                        </div>
+                    `;
+                });
+                
+                return div;
+            };
+            
+            legend.addTo(map);
+            window.unidadeLegend = legend;
+        }
+        
+        function createShapeLegend() {
+            // Remove existing legend if any
+            if (window.shapeLegend) {
+                map.removeControl(window.shapeLegend);
+            }
+            
+            // Get unique datasets
+            const datasets = [...new Set(pointsData.map(p => p.dataset))].sort();
+            
+            if (datasets.length <= 1) return; // Don't show legend if only one dataset
+            
+            const legend = L.control({position: 'topleft'});
+            
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                div.style.background = 'white';
+                div.style.padding = '10px';
+                div.style.borderRadius = '5px';
+                div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                
+                div.innerHTML = '<strong>Datasets</strong><br>';
+                
+                const shapeNames = ['Círculo', 'Quadrado', 'Triângulo', 'Diamante', 'Pentágono', 'Hexágono', 'Estrela'];
+                
+                datasets.forEach(dataset => {
+                    const shapeName = shapeNames[dataset % shapeNames.length];
+                    const label = datasetFilenames[dataset] || (dataset === 0 ? 'Principal' : `Sobreposto ${dataset}`);
+                    const sampleSVG = getMarkerShape(dataset, 20, '#999', '#666', '');
+                    
+                    div.innerHTML += `
+                        <div style="margin: 5px 0; display: flex; align-items: center;">
+                            <div style="width: 20px; height: 20px; margin-right: 8px;">${sampleSVG}</div>
+                            <span>${shapeName} - ${label}</span>
+                        </div>
+                    `;
+                });
+                
+                return div;
+            };
+            
+            legend.addTo(map);
+            window.shapeLegend = legend;
+        }
+
+        function selectPoint(point) {
+            selectedPoint = point;
+            
+            // Update selected point info
+            document.getElementById('selectedPoint').innerHTML = `
+                <div class="selected-point">
+                    <strong>Point ID:</strong> ${point.id}<br>
+                    <strong>SGE:</strong> ${point.sge}<br>
+                    <strong>Unidade Local:</strong> ${point.unidade_local}<br>
+                    <strong>Custo:</strong> R$ ${point.custo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+                    <strong>Município:</strong> ${point.municipio}
+                </div>
+            `;
+            
+            // Show current cluster statistics
+            const currentClusterStats = getClusterStats(point.cluster);
+            if (currentClusterStats) {
+                document.getElementById('currentClusterInfo').innerHTML = `
+                    <div class="cluster-info">
+                        <h3>📍 Cluster Atual: ${currentClusterStats.label}</h3>
+                        <div class="cluster-detail">
+                            <span class="cluster-detail-label">Total de pontos:</span>
+                            <span class="cluster-detail-value">${currentClusterStats.nPoints}</span>
+                        </div>
+                        <div class="cluster-detail">
+                            <span class="cluster-detail-label">Custo total:</span>
+                            <span class="cluster-detail-value">R$ ${currentClusterStats.totalCost.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                        </div>
+                        <div class="cluster-detail">
+                            <span class="cluster-detail-label">Custo médio:</span>
+                            <span class="cluster-detail-value">R$ ${currentClusterStats.avgCost.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Populate cluster dropdown with ALL clusters from ALL Unidades Locais
+            const targetSelect = document.getElementById('targetCluster');
+            targetSelect.innerHTML = '<option value="">Selecione o lote alvo...</option>';
+
+            // Get all unique cluster IDs from all points, grouped by Unidade Local
+            Object.keys(unidadesClusters).sort().forEach(unidadeLocal => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = unidadeLocal;
+                
+                // Add option to create new cluster in this Unidade Local
+                const newClusterOption = document.createElement('option');
+                newClusterOption.value = `NEW_${unidadeLocal}`;
+                newClusterOption.textContent = `➕ Criar Novo Lote em ${unidadeLocal}`;
+                newClusterOption.style.fontWeight = 'bold';
+                newClusterOption.style.color = '#4CAF50';
+                optgroup.appendChild(newClusterOption);
+                
+                // Add existing clusters
+                unidadesClusters[unidadeLocal].forEach(clusterId => {
+                    if (clusterId !== point.cluster) {
+                        const option = document.createElement('option');
+                        option.value = clusterId;
+                        const stats = getClusterStats(clusterId);
+                        option.textContent = stats ? stats.label : `Cluster ${clusterId}`;
+                        optgroup.appendChild(option);
+                    }
+                });
+                
+                if (optgroup.children.length > 0) {
+                    targetSelect.appendChild(optgroup);
+                }
+            });
+            
+            // Show target cluster info when selected
+            targetSelect.onchange = function() {
+                if (this.value) {
+                    const targetStats = getClusterStats(parseInt(this.value));
+                    if (targetStats) {
+                        document.getElementById('targetClusterInfo').innerHTML = `
+                            <div class="target-cluster-info">
+                                <h4>🎯 Preview do Cluster Alvo</h4>
+                                <div class="cluster-detail">
+                                    <span class="cluster-detail-label">Unidade:</span>
+                                    <span class="cluster-detail-value">${targetStats.unidade_local}</span>
+                                </div>
+                                <div class="cluster-detail">
+                                    <span class="cluster-detail-label">Pontos:</span>
+                                    <span class="cluster-detail-value">${targetStats.nPoints} → ${targetStats.nPoints + 1}</span>
+                                </div>
+                                <div class="cluster-detail">
+                                    <span class="cluster-detail-label">Custo total:</span>
+                                    <span class="cluster-detail-value">R$ ${targetStats.totalCost.toLocaleString('pt-BR', {maximumFractionDigits: 0})} → R$ ${(targetStats.totalCost + point.custo).toLocaleString('pt-BR', {maximumFractionDigits: 0})}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('targetClusterInfo').innerHTML = '';
+                }
+            };
+            
+            document.getElementById('reassignControl').style.display = 'block';
+            
+            // Highlight marker
+            /* Object.values(markers).forEach(m => {
+                m.setStyle({weight: 2, color: '#fff'});
+            });
+            if (markers[point.id]) {
+                markers[point.id].setStyle({weight: 4, color: '#000'});
+            } */
+        }
+        
+        document.getElementById('reassignBtn').addEventListener('click', () => {
+            if (!selectedPoint) return;
+            
+            const targetValue = document.getElementById('targetCluster').value;
+            if (!targetValue) {
+                alert('Por favor, selecione um cluster alvo primeiro!');
+                return;
+            }
+            
+            let targetCluster;
+            let targetUnidadeLocal;
+            
+            // Check if creating a new cluster
+            if (targetValue.startsWith('NEW_')) {
+                targetUnidadeLocal = targetValue.substring(4); // Remove 'NEW_' prefix
+                
+                // Find the highest cluster ID across all data
+                const maxCluster = pointsData.length > 0 
+                    ? Math.max(...pointsData.map(p => p.cluster))
+                    : -1;
+                
+                targetCluster = maxCluster + 1;
+                
+                // Create new cluster label
+                const clusterCount = unidadesClusters[targetUnidadeLocal] 
+                    ? unidadesClusters[targetUnidadeLocal].length 
+                    : 0;
+                const newClusterLabel = `${targetUnidadeLocal}-C${targetCluster}`;
+                
+                // Update point data
+                const pointIndex = pointsData.findIndex(p => p.id === selectedPoint.id);
+                pointsData[pointIndex].cluster = targetCluster;
+                pointsData[pointIndex].cluster_label = newClusterLabel;
+                pointsData[pointIndex].unidade_local = targetUnidadeLocal;
+                
+            } else {
+                // Existing cluster reassignment
+                targetCluster = parseInt(targetValue);
+                
+                // Update point data
+                const pointIndex = pointsData.findIndex(p => p.id === selectedPoint.id);
+                const originalUnidadeLocal = pointsData[pointIndex].unidade_local; // Keep original
+                pointsData[pointIndex].cluster = targetCluster;
+                
+                // Find target cluster's information from existing points in that cluster
+                const targetClusterPoints = pointsData.filter(p => p.cluster === targetCluster && p.id !== selectedPoint.id);
+                
+                if (targetClusterPoints.length > 0) {
+                    // Use the cluster label from other points in the target cluster
+                    pointsData[pointIndex].cluster_label = targetClusterPoints[0].cluster_label;
+                } else {
+                    // Fallback: construct label with original Unidade Local and new cluster ID
+                    pointsData[pointIndex].cluster_label = `${originalUnidadeLocal}-C${targetCluster}`;
+                }
+                
+                // Ensure Unidade Local is NOT changed
+                pointsData[pointIndex].unidade_local = originalUnidadeLocal;
+            }
+            
+            // Rebuild unidadesClusters mapping
+            unidadesClusters = {};
+            pointsData.forEach(point => {
+                if (!unidadesClusters[point.unidade_local]) {
+                    unidadesClusters[point.unidade_local] = new Set();
+                }
+                unidadesClusters[point.unidade_local].add(point.cluster);
+            });
+            Object.keys(unidadesClusters).forEach(key => {
+                unidadesClusters[key] = Array.from(unidadesClusters[key]).sort((a, b) => a - b);
+            });
+            
+            // Refresh
+            map.closePopup(); // Add this line to close any open popups
+            createMarkers();
+            createShapeLegend();
+            updateStatistics();
+            
+            
+            selectedPoint = null;
+            document.getElementById('selectedPoint').innerHTML = '<div class="selected-point">✅ Ponto reatribuído! Clique em outro ponto para continuar.</div>';
+            document.getElementById('currentClusterInfo').innerHTML = '';
+            document.getElementById('reassignControl').style.display = 'none';
+        });
+        
+        function updateStatistics() {
+
+            const primaryPoints = pointsData.filter(p => p.dataset === 0).length;
+            const overlayPoints = pointsData.filter(p => p.dataset > 0).length;
+
+            document.getElementById('primaryPoints').textContent = primaryPoints;
+            document.getElementById('overlayPoints').textContent = overlayPoints;
+
+            document.getElementById('totalPoints').textContent = pointsData.length;
+            
+            const uniqueClusters = [...new Set(pointsData.map(p => p.cluster))];
+            document.getElementById('totalClusters').textContent = uniqueClusters.length;
+            
+            const totalCost = pointsData.reduce((sum, p) => sum + p.custo, 0);
+            document.getElementById('totalCost').textContent = 
+                'R$ ' + totalCost.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        }
+        
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if (pointsData.length === 0) {
+                alert('Nenhum dado para exportar!');
+                return;
+            }
+            
+            const exportData = pointsData.map(p => ({
+                'Point ID': p.id,
+                'Cluster ID': p.cluster,
+                'Cluster Label': p.cluster_label,
+                'Unidade Local': p.unidade_local,
+                'SGE': p.sge,
+                'Latitude': p.lat,
+                'Longitude': p.lon,
+                'Nota Consolidada': p.nota,
+                'Custo Final (R$)': p.custo,
+                'Rodovia': p.rodovia,
+                'km': p.km,
+                'Município': p.municipio,
+                'Status Geral': p.status_geral,
+                'Status Detalhado': p.status_detalhado,
+                'Dataset': datasetFilenames[p.dataset] || (p.dataset === 0 ? 'Principal' : `Sobreposto ${p.dataset}`),
+            }));
+            
+            const uniqueClusters = [...new Set(pointsData.map(p => p.cluster))];
+            const summaryData = uniqueClusters.sort((a, b) => a - b).map(clusterId => {
+                const stats = getClusterStats(clusterId);
+                
+                return {
+                    'Cluster ID': clusterId,
+                    'Cluster Label': stats.label,
+                    'Unidade Local': stats.unidade_local,
+                    'Number of Points': stats.nPoints,
+                    'Total Cost (R$)': stats.totalCost,
+                    'Avg Cost (R$)': stats.avgCost
+                };
+            });
+            
+            const wb = XLSX.utils.book_new();
+            
+            const ws1 = XLSX.utils.json_to_sheet(exportData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'All Points');
+            
+            const ws2 = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Cluster Summary');
+            
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            XLSX.writeFile(wb, `clusters_edited_${timestamp}.xlsx`);
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                // Clear all data
+                pointsData = [];
+                unidadesClusters = {};
+                selectedPoint = null;
+                
+                // Clear markers
+                Object.values(markers).forEach(marker => map.removeLayer(marker));
+                Object.values(centroidMarkers).forEach(marker => map.removeLayer(marker));
+                markers = {};
+                centroidMarkers = {};
+                
+                // Reset UI
+                document.getElementById('content').classList.remove('active');
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('uploadBox').classList.remove('loaded');
+                document.getElementById('loadedMessage').style.display = 'none';
+                document.getElementById('fileInput').value = '';
+                document.getElementById('loadStatus').innerHTML = '';
+                
+                // Reset map
+                if (map) {
+                    map.setView([-15.7801, -47.9292], 4);
+                }
+            }
+        });
+        
+        // Initialize empty map on load
+        initMap();
+    </script>
+</body>
+</html>
