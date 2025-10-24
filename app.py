@@ -1,15 +1,44 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Page config
+# MUST be first line
 st.set_page_config(
     page_title="Ferramenta de Análise de Lotes",
     page_icon="🗺️",
-    layout="wide"
+    layout="wide"  # Critical for maps!
 )
 
-# Title and instructions
-st.title("🗺️ Ferramenta de Análise de Lotes - Visualizador Independente")
+# CSS optimized for map applications
+st.markdown("""
+<style>
+/* Remove Streamlit default padding and margins */
+html, body, [class^="st-"], .main, .block-container {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Make the main container full height */
+.main .block-container {
+    max-width: 100% !important;
+    height: 100vh !important;
+}
+
+/* Make iframe truly fill available space */
+iframe {
+    width: 100vw !important;
+    height: 100vh !important;
+    border: none !important;
+}
+
+/* Hide Streamlit footer and branding */
+footer, header, .viewerBadge_container__1QSob {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Minimal title
+st.markdown("## 🗺️ Ferramenta de análise de lotes")
 
 # Create tabs
 tab1, tab2 = st.tabs(["📊 Ferramenta", "📖 Instruções"])
@@ -49,8 +78,8 @@ with tab1:
         # Render the HTML
         components.html(
             html_content,
-            height=850,
-            scrolling=True
+            height=0,  # ignored due to CSS height:100vh
+            scrolling=False
         )
     except FileNotFoundError:
         st.error("❌ Arquivo 'standalone_cluster_editor.html' não encontrado!")
