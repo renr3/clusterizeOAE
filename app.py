@@ -84,6 +84,8 @@ with tab2:
             if not (file1 and file2 and file3):
                 st.error("⚠️ Por favor, envie os três arquivos necessários.")
             else:
+                #Progress bar
+                progress_bar = st.progress(0)
                 df1 = pd.read_excel(file1, header=1, usecols="B:Y", decimal=",")
                 df2 = pd.read_excel(file2, sheet_name="Simulação", header=2, usecols="B:AS", decimal=",")
                 df3 = pd.read_excel(file3, sheet_name="CONTROLE GERAL PROARTE", header=0, decimal=",")
@@ -106,6 +108,8 @@ with tab2:
                 df2['merge_key'] = clean_numerical_code(df2['SGE_AJUSTE'])
                 df3['CodPro'] = clean_numerical_code(df3['CodPro'])
 
+                progress_bar = st.progress(10)
+
                 # Merge df1 with df2
                 df_merged = df1.merge(
                     df2[['merge_key', 'Custo final']],
@@ -120,7 +124,7 @@ with tab2:
                     how='left',
                     suffixes=('', '_df3')
                 )
-
+                progress_bar = st.progress(20)
 
                 def process_nota_final(value):
                     if isinstance(value, str):
@@ -221,9 +225,7 @@ with tab2:
 
                 df_filtered['LAT'] = df_filtered['Latitude']
                 df_filtered['LONG'] = df_filtered['Longitude']
-
-                #Progress bar
-                progress_bar = st.progress(0)
+                progress_bar = st.progress(30)
 
                 def calculate_cluster_metrics(df, cluster_col='cluster', use_road_distance=False):
                     """Calculate metrics for each cluster"""
