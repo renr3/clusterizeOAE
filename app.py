@@ -69,7 +69,12 @@ with tab2:
         ],
         index=0  # default selection ("AC")
     )
-    tamanhoLoteReferencia = st.number_input("Tamanho do lote de referência", value=0.0)
+    tamanhoLoteReferencia = st.number_input(
+            "Tamanho do lote de referência",
+            min_value=0,
+            value=0,
+            step=1
+        )
     notaMinima = st.text_input("Nota mínima a ser incluída")
     notaMaxima = st.text_input("Nota máxima a ser incluída")
 
@@ -217,126 +222,130 @@ with tab2:
                 df_filtered['LAT'] = df_filtered['Latitude']
                 df_filtered['LONG'] = df_filtered['Longitude']
 
-                with st.spinner("Rodando análise, aguarde..."):
-                    def calculate_cluster_metrics(df, cluster_col='cluster', use_road_distance=False):
-                        """Calculate metrics for each cluster"""
-                        metrics = {}
-                        for cluster_id in df[cluster_col].unique():
-                            cluster_data = df[df[cluster_col] == cluster_id]
-                            coords = cluster_data[['LAT', 'LONG']].values
+                #Progress bar
+                progress_bar = st.progress(0)
 
-                            max_dist = 0
-                            if len(coords) > 1:
-                                for i in range(len(coords)):
-                                    for j in range(i+1, len(coords)):
-                                        if use_road_distance:
-                                            dist = get_road_distance(coords[i][0], coords[i][1],
-                                                                    coords[j][0], coords[j][1],
-                                                                    show_progress=False)
-                                        else:
-                                            dist = haversine_distance(coords[i][0], coords[i][1],
-                                                                    coords[j][0], coords[j][1])
-                                        max_dist = max(max_dist, dist)
+                def calculate_cluster_metrics(df, cluster_col='cluster', use_road_distance=False):
+                    """Calculate metrics for each cluster"""
+                    metrics = {}
+                    for cluster_id in df[cluster_col].unique():
+                        cluster_data = df[df[cluster_col] == cluster_id]
+                        coords = cluster_data[['LAT', 'LONG']].values
 
-                            avg_dist = 0
-                            if len(coords) > 1:
-                                distances = []
-                                for i in range(len(coords)):
-                                    for j in range(i+1, len(coords)):
-                                        if use_road_distance:
-                                            dist = get_road_distance(coords[i][0], coords[i][1],
-                                                                    coords[j][0], coords[j][1],
-                                                                    show_progress=False)
-                                        else:
-                                            dist = haversine_distance(coords[i][0], coords[i][1],
-                                                                    coords[j][0], coords[j][1])
-                                        distances.append(dist)
-                                avg_dist = np.mean(distances) if distances else 0
+                        max_dist = 0
+                        if len(coords) > 1:
+                            for i in range(len(coords)):
+                                for j in range(i+1, len(coords)):
+                                    if use_road_distance:
+                                        dist = get_road_distance(coords[i][0], coords[i][1],
+                                                                coords[j][0], coords[j][1],
+                                                                show_progress=False)
+                                    else:
+                                        dist = haversine_distance(coords[i][0], coords[i][1],
+                                                                coords[j][0], coords[j][1])
+                                    max_dist = max(max_dist, dist)
 
-                            metrics[cluster_id] = {
-                                'n_points': len(cluster_data),
-                                'cost': cluster_data['Custo final'].sum(),
-                                'max_distance': max_dist,
-                                'avg_distance': avg_dist
-                            }
+                        avg_dist = 0
+                        if len(coords) > 1:
+                            distances = []
+                            for i in range(len(coords)):
+                                for j in range(i+1, len(coords)):
+                                    if use_road_distance:
+                                        dist = get_road_distance(coords[i][0], coords[i][1],
+                                                                coords[j][0], coords[j][1],
+                                                                show_progress=False)
+                                    else:
+                                        dist = haversine_distance(coords[i][0], coords[i][1],
+                                                                coords[j][0], coords[j][1])
+                                    distances.append(dist)
+                            avg_dist = np.mean(distances) if distances else 0
 
-                        return metrics
+                        metrics[cluster_id] = {
+                            'n_points': len(cluster_data),
+                            'cost': cluster_data['Custo final'].sum(),
+                            'max_distance': max_dist,
+                            'avg_distance': avg_dist
+                        }
 
-                    def cluster_unidade_local(df_ul, unidade_name):
-                        """Cluster points within a single Unidade Local"""
-                        print(f"\n{'='*70}")
-                        print(f"Processing: {unidade_name}")
-                        print(f"{'='*70}")
-                        print(f"Total points: {len(df_ul)}")
+                    return metrics
 
-                        if len(df_ul) == 0:
-                            return df_ul
+                def cluster_unidade_local(df_ul, unidade_name):
+                    """Cluster points within a single Unidade Local"""
+                    print(f"\n{'='*70}")
+                    print(f"Processing: {unidade_name}")
+                    print(f"{'='*70}")
+                    print(f"Total points: {len(df_ul)}")
 
-                        n_clusters = max(1, int(np.ceil(len(df_ul) / max_cluster_size)))
-                        print(f"Creating {n_clusters} cluster(s) (max {max_cluster_size} points each)")
-
-                        coords = df_ul[['LAT', 'LONG']].values
-
-                        if n_clusters == 1:
-                            df_ul['cluster'] = 0
-                            return df_ul
-
-                        print("Initial geographic clustering...")
-                        # Normalize cost to similar scale as coordinates
-                        cost_normalized = df_ul['Custo final'] / df_ul['Custo final'].max()
-
-                        # Create feature matrix with lat, lon, AND normalized cost
-                        features = np.column_stack([
-                            coords,  # lat, lon
-                            cost_normalized * 1  # weighted cost
-                        ])
-
-                        kmeans = KMeans(n_clusters=n_clusters)
-                        clusters = kmeans.fit_predict(features)
-
-                        df_ul['cluster'] = clusters  # Use the cost-aware result!
-
+                    if len(df_ul) == 0:
                         return df_ul
 
-                    # # Process each Unidade Local
-                    # print("\n" + "="*70)
-                    # print("CLUSTERING ANALYSIS BY UNIDADE LOCAL")
-                    # print("="*70)
+                    n_clusters = max(1, int(np.ceil(len(df_ul) / max_cluster_size)))
+                    print(f"Creating {n_clusters} cluster(s) (max {max_cluster_size} points each)")
 
-                    unidades_locais = df_filtered['Unidade Local'].unique()
-                    # print(f"\nFound {len(unidades_locais)} unique Unidade Local(s)")
+                    coords = df_ul[['LAT', 'LONG']].values
 
-                    global_cluster_id = 0
-                    result_dfs = []
+                    if n_clusters == 1:
+                        df_ul['cluster'] = 0
+                        return df_ul
 
-                    for unidade in sorted(unidades_locais):
-                        df_ul = df_filtered[df_filtered['Unidade Local'] == unidade].copy()
-                        df_ul = cluster_unidade_local(df_ul, unidade)
-                        df_ul['cluster'] = df_ul['cluster'] + global_cluster_id
-                        global_cluster_id = df_ul['cluster'].max() + 1
-                        df_ul['cluster_label'] = df_ul.apply(
-                            lambda row: f"{row['Unidade Local']}-C{row['cluster']}", axis=1
-                        )
-                        result_dfs.append(df_ul)
+                    print("Initial geographic clustering...")
+                    # Normalize cost to similar scale as coordinates
+                    cost_normalized = df_ul['Custo final'] / df_ul['Custo final'].max()
 
-                    df_final = pd.concat(result_dfs, ignore_index=True)
+                    # Create feature matrix with lat, lon, AND normalized cost
+                    features = np.column_stack([
+                        coords,  # lat, lon
+                        cost_normalized * 1  # weighted cost
+                    ])
 
-                    # Calculate centroids for each cluster
-                    cluster_centroids = []
-                    for cluster_id in sorted(df_final['cluster'].unique()):
-                        cluster_data = df_final[df_final['cluster'] == cluster_id]
-                        centroid_lat = cluster_data['LAT'].mean()
-                        centroid_lon = cluster_data['LONG'].mean()
-                        cluster_label = cluster_data['cluster_label'].iloc[0]
+                    kmeans = KMeans(n_clusters=n_clusters)
+                    clusters = kmeans.fit_predict(features)
 
-                        cluster_centroids.append({
-                            'cluster': int(cluster_id),
-                            'lat': float(centroid_lat),
-                            'lon': float(centroid_lon),
-                            'label': str(cluster_label),
-                            'n_points': len(cluster_data),
-                            'total_cost': float(cluster_data['Custo final'].sum())
-                        })
+                    df_ul['cluster'] = clusters  # Use the cost-aware result!
+
+                    return df_ul
+
+                # # Process each Unidade Local
+                # print("\n" + "="*70)
+                # print("CLUSTERING ANALYSIS BY UNIDADE LOCAL")
+                # print("="*70)
+
+                unidades_locais = df_filtered['Unidade Local'].unique()
+                # print(f"\nFound {len(unidades_locais)} unique Unidade Local(s)")
+
+                global_cluster_id = 0
+                result_dfs = []
+
+                for unidade in sorted(unidades_locais):
+                    df_ul = df_filtered[df_filtered['Unidade Local'] == unidade].copy()
+                    df_ul = cluster_unidade_local(df_ul, unidade)
+                    df_ul['cluster'] = df_ul['cluster'] + global_cluster_id
+                    global_cluster_id = df_ul['cluster'].max() + 1
+                    df_ul['cluster_label'] = df_ul.apply(
+                        lambda row: f"{row['Unidade Local']}-C{row['cluster']}", axis=1
+                    )
+                    result_dfs.append(df_ul)
+
+                df_final = pd.concat(result_dfs, ignore_index=True)
+                progress_bar.progress(50)
+
+                # Calculate centroids for each cluster
+                cluster_centroids = []
+                for cluster_id in sorted(df_final['cluster'].unique()):
+                    cluster_data = df_final[df_final['cluster'] == cluster_id]
+                    centroid_lat = cluster_data['LAT'].mean()
+                    centroid_lon = cluster_data['LONG'].mean()
+                    cluster_label = cluster_data['cluster_label'].iloc[0]
+
+                    cluster_centroids.append({
+                        'cluster': int(cluster_id),
+                        'lat': float(centroid_lat),
+                        'lon': float(centroid_lon),
+                        'label': str(cluster_label),
+                        'n_points': len(cluster_data),
+                        'total_cost': float(cluster_data['Custo final'].sum())
+                    })
+                progress_bar.progress(70)
 
                 # Save Excel output compatible with HTML tool
                 excel_filename = f'{analysed_state.lower()}_clusters_output.xlsx'
@@ -378,6 +387,7 @@ with tab2:
                 # Add Dataset column (default to "Principal" for primary dataset)
                 df_all_points['Dataset'] = 'Principal'
 
+                progress_bar.progress(85)
                 # Prepare "Cluster Summary" sheet with exact column names expected by HTML
                 cluster_summary = []
                 for cluster_id in sorted(df_final['cluster'].unique()):
@@ -394,6 +404,8 @@ with tab2:
                         'Avg Cost (R$)': float(cluster_data['Custo final'].mean()),
                     })
 
+                progress_bar.progress(90)
+
                 df_summary = pd.DataFrame(cluster_summary)
 
                 # Create a BytesIO buffer instead of a file
@@ -406,7 +418,7 @@ with tab2:
 
                 # Rewind the buffer
                 output.seek(0)
-
+                progress_bar.progress(100)
 
                 st.download_button(
                     label="💾 Baixar Resultados",
