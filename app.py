@@ -53,7 +53,7 @@ footer, header, .viewerBadge_container__1QSob {
 tab1, tab2, tab3 = st.tabs(["📊 Visualizador", "📗 Gerar Excel com dados iniciais", "📖 Instruções"])
 
 with tab2:
-    st.header("📗 Carregar os arquivos-base")
+    st.header("Carregar os arquivos-base")
 
      # Columns for file uploads
     col1, col2, col3 = st.columns(3)
@@ -63,6 +63,8 @@ with tab2:
         file2 = st.file_uploader("📄 Estudo Paramétrico_20251021", type=["xlsx"])
     with col3:
         file3 = st.file_uploader("📄 CONTROLE GERAL PROARTE", type=["xlsx"])
+
+    st.header("Definir parâmetros para loteamento inicial")
 
     # Columns for other controls
     col4, col5, col6, col7 = st.columns([1,1,1,1])  # adjust relative widths
