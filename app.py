@@ -50,7 +50,7 @@ footer, header, .viewerBadge_container__1QSob {
 # st.markdown("## 🗺️ Ferramenta de análise de lotes")
 
 # Create tabs
-tab1, tab2, tab3 = st.tabs(["📊 Visualizador", "📗 Gerar Excel com dados ", "📖 Instruções"])
+tab1, tab2, tab3 = st.tabs(["📊 Visualizador", "📗 Gerar Excel com dados iniciais", "📖 Instruções"])
 
 with tab2:
     st.header("📗 Carregar os arquivos-base")
