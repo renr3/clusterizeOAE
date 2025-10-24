@@ -53,14 +53,14 @@ footer, header, .viewerBadge_container__1QSob {
 tab1, tab2, tab3 = st.tabs(["📊 Visualizador", "📗 Gerar Excel com dados ", "📖 Instruções"])
 
 with tab2:
-    st.header("🗺️ Ferramenta de Análise de Lotes")
+    st.header("📗 Carregar os arquivos-base")
 
      # Columns for file uploads
     col1, col2, col3 = st.columns(3)
     with col1:
-        file1 = st.file_uploader("📄 MAPEsAMENTO_INSPEÇÕES", type=["xlsx"])
+        file1 = st.file_uploader("📄 MAPEAMENTO_INSPEÇÕES_20201021", type=["xlsx"])
     with col2:
-        file2 = st.file_uploader("📄 Estudo Paramétrico", type=["xlsx"])
+        file2 = st.file_uploader("📄 Estudo Paramétrico_20251021", type=["xlsx"])
     with col3:
         file3 = st.file_uploader("📄 CONTROLE GERAL PROARTE", type=["xlsx"])
 
@@ -78,12 +78,12 @@ with tab2:
     with col5:
         tamanhoLoteReferencia = st.number_input(
             "Tamanho do lote de referência",
-            min_value=0, value=0, step=1
+                
         )
     with col6:
-        notaMinima = st.text_input("Nota mínima a ser incluída")
+        notaMinima = st.number_input("Nota mínima a ser incluída",min_value=0, max_value=5, value=0, step=1)
     with col7:
-        notaMaxima = st.text_input("Nota máxima a ser incluída")
+        notaMaxima = st.number_input("Nota máxima a ser incluída",min_value=0, max_value=5, value=5, step=1)
 
     if st.button("▶️ Rodar Análise", key="rodar_lotes"):
         try:
