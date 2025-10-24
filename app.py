@@ -448,22 +448,28 @@ with tab3:
     st.markdown("""
     ## Como usar esta ferramenta:
     
-    ### 📁 1. Preparar o arquivo Excel
-    - Execute o notebook Jupyter localmente para gerar o arquivo Excel com os clusters
-    - O arquivo deve ter uma aba "All Points" com as seguintes colunas:
+    ### 📁 1. Preparar o arquivo Excel com dados iniciais
+    - O Visualizador opera a partir de um arquivo .xlsx (Excel) que contém as informações necessárias de cada OAE em análise
+    - Para gerar tais arquivos .xlsx, utilize a aba "Gerar Excel com dados iniciais"
+    - Para isso, é necessário carregar três arquivos-base:
+        1. MAPEAMENTO_INSPEÇÕES_20201021.xlsx
+        2. Estudo Paramétrico_20251021.xlsx
+        3. CONTROLE GERAL PROARTE.xlsx
+    - Em seguida, é necessário definir parâmetros que serão utilizados para a sugestão inicial de loteamento, baseada em uma análise de clusters:
+        - Estado a ser analisado
+        - Tamanho do lote de referência)  
+        - Nota mínima e máxima a ser incluída na análise
+    - Após definir os parâmetros, clique em "Rodar Análise"
+    - Aguarde o processamento, após o qual aparecerá um botão para descarregar o arquivo Excel gerado
+    - O arquivo gerado conterá as seguintes colunas essenciais:
         - Point ID, Cluster ID, Cluster Label, Unidade Local, SGE
         - Latitude, Longitude, Nota Consolidada, Custo Final (R$)
         - Rodovia, km, Município, Status Geral, Status Detalhado
     
-    ### 📤 2. Carregar o arquivo
-    - Clique em "Carregar Arquivo" na ferramenta
-    - Selecione seu arquivo Excel processado
-    
-    ### 🗺️ 3. Visualizar e editar
-    - Os pontos aparecerão no mapa com cores diferentes para cada cluster
-    - Clique em um ponto para selecioná-lo
-    - Use o menu dropdown para reatribuir o ponto a outro cluster
-    - As estatísticas são atualizadas em tempo real
+    ### 🗺️ 3. Visualizador
+    - De posse do arquivo Excel gerado, abra a aba "Visualizador"
+    - O Visualizador carrega o arquivo Excel e apresenta os dados em um mapa interativo
+    - O Visualizador também permite editar manualmente os lotes diretamente no mapa
     
     ### 💾 4. Exportar resultados
     - Clique em "Exportar para Excel" para baixar o arquivo editado
