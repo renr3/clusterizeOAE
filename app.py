@@ -55,29 +55,35 @@ tab1, tab2, tab3 = st.tabs(["📊 Visualizador", "📗 Gerar Excel com dados ", 
 with tab2:
     st.header("🗺️ Ferramenta de Análise de Lotes")
 
-    file1 = st.file_uploader("📄 MAPEAMENTO_INSPEÇÕES", type=["xlsx"])
-    file2 = st.file_uploader("📄 Estudo Paramétrico", type=["xlsx"])
-    file3 = st.file_uploader("📄 CONTROLE GERAL PROARTE", type=["xlsx"])
+     # Columns for file uploads
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        file1 = st.file_uploader("📄 MAPEsAMENTO_INSPEÇÕES", type=["xlsx"])
+    with col2:
+        file2 = st.file_uploader("📄 Estudo Paramétrico", type=["xlsx"])
+    with col3:
+        file3 = st.file_uploader("📄 CONTROLE GERAL PROARTE", type=["xlsx"])
 
-    estadoAnalisado = st.selectbox(
-        "Estado a ser analisado",
-        [
-            "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES",
-            "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR",
-            "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
-            "SP", "SE", "TO"
-        ],
-        index=0  # default selection ("AC")
-    )
-    tamanhoLoteReferencia = st.number_input(
-            "Tamanho do lote de referência",
-            min_value=0,
-            value=0,
-            step=1
+    # Columns for other controls
+    col4, col5, col6, col7 = st.columns([1,1,1,1])  # adjust relative widths
+    with col4:
+        estadoAnalisado = st.selectbox(
+            "Estado a ser analisado",
+            ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES",
+             "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR",
+             "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+             "SP", "SE", "TO"],
+            index=0
         )
-    notaMinima = st.text_input("Nota mínima a ser incluída")
-    notaMaxima = st.text_input("Nota máxima a ser incluída")
-
+    with col5:
+        tamanhoLoteReferencia = st.number_input(
+            "Tamanho do lote de referência",
+            min_value=0, value=0, step=1
+        )
+    with col6:
+        notaMinima = st.text_input("Nota mínima a ser incluída")
+    with col7:
+        notaMaxima = st.text_input("Nota máxima a ser incluída")
 
     if st.button("▶️ Rodar Análise", key="rodar_lotes"):
         try:
@@ -429,7 +435,7 @@ with tab2:
                 st.download_button(
                     label="💾 Baixar Resultados",
                     data=output,
-                    file_name="resultado_analise.xlsx",
+                    file_name=f"{estadoAnalisado}_analise_previa.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
         except Exception as e:
