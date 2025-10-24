@@ -87,9 +87,13 @@ with tab2:
                 #Progress bar
                 progress_bar = st.progress(0)
                 df1 = pd.read_excel(file1, header=1, usecols="B:Y", decimal=",")
+                progress_bar.progress(10)
                 df2 = pd.read_excel(file2, sheet_name="Simulação", header=2, usecols="B:AS", decimal=",")
+                progress_bar.progress(20)
                 df3 = pd.read_excel(file3, sheet_name="CONTROLE GERAL PROARTE", header=0, decimal=",")
+                progress_bar.progress(30)
                 df3 = df3.drop_duplicates(subset="CodPro", keep="first")
+                progress_bar.progress(40)
 
                 # MERGING DATAFRAMES WITH CLEANING
                 def clean_numerical_code(series):
@@ -108,7 +112,7 @@ with tab2:
                 df2['merge_key'] = clean_numerical_code(df2['SGE_AJUSTE'])
                 df3['CodPro'] = clean_numerical_code(df3['CodPro'])
 
-                progress_bar = st.progress(10)
+                progress_bar.progress(50)
 
                 # Merge df1 with df2
                 df_merged = df1.merge(
@@ -124,7 +128,7 @@ with tab2:
                     how='left',
                     suffixes=('', '_df3')
                 )
-                progress_bar = st.progress(20)
+                progress_bar.progress(60)
 
                 def process_nota_final(value):
                     if isinstance(value, str):
@@ -225,7 +229,7 @@ with tab2:
 
                 df_filtered['LAT'] = df_filtered['Latitude']
                 df_filtered['LONG'] = df_filtered['Longitude']
-                progress_bar = st.progress(30)
+                progress_bar.progress(70)
 
                 def calculate_cluster_metrics(df, cluster_col='cluster', use_road_distance=False):
                     """Calculate metrics for each cluster"""
@@ -329,7 +333,7 @@ with tab2:
                     result_dfs.append(df_ul)
 
                 df_final = pd.concat(result_dfs, ignore_index=True)
-                progress_bar.progress(50)
+                progress_bar.progress(80)
 
                 # Calculate centroids for each cluster
                 cluster_centroids = []
@@ -347,7 +351,7 @@ with tab2:
                         'n_points': len(cluster_data),
                         'total_cost': float(cluster_data['Custo final'].sum())
                     })
-                progress_bar.progress(70)
+                progress_bar.progress(90)
 
                 # Save Excel output compatible with HTML tool
                 excel_filename = f'{analysed_state.lower()}_clusters_output.xlsx'
@@ -389,7 +393,7 @@ with tab2:
                 # Add Dataset column (default to "Principal" for primary dataset)
                 df_all_points['Dataset'] = 'Principal'
 
-                progress_bar.progress(85)
+                progress_bar.progress(95)
                 # Prepare "Cluster Summary" sheet with exact column names expected by HTML
                 cluster_summary = []
                 for cluster_id in sorted(df_final['cluster'].unique()):
@@ -406,7 +410,7 @@ with tab2:
                         'Avg Cost (R$)': float(cluster_data['Custo final'].mean()),
                     })
 
-                progress_bar.progress(90)
+                progress_bar.progress(97)
 
                 df_summary = pd.DataFrame(cluster_summary)
 
