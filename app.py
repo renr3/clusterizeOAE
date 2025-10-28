@@ -341,6 +341,9 @@ with tab2:
                     result_dfs.append(df_ul)
 
                 df_final = pd.concat(result_dfs, ignore_index=True)
+                pd.set_option('display.max_columns', None)
+                print(df_final)
+                
                 progress_bar.progress(80)
 
                 # Calculate centroids for each cluster
@@ -379,7 +382,18 @@ with tab2:
                 df_all_points['Unidade Local'] = df_final['Unidade Local']
 
                 # Add SGE (if exists in original data, otherwise use a default or empty)
-                df_all_points['SGE'] = df_final['SGE'] if 'SGE' in df_final.columns else ''
+                # Add SGE (if exists in original data, otherwise use a default or empty)
+                if 'Código (SGE)' in df_final.columns:
+                    # keep missing values and convert floats (e.g. 150026.0) to pandas nullable integers
+                    df_all_points['SGE'] = df_final['Código (SGE)'].where(df_final['Código (SGE)'].notna(), pd.NA).astype('Int64')
+                else:
+                    df_all_points['SGE'] = pd.Series([pd.NA] * len(df_final), dtype='Int64')
+                
+                # Add CodPro
+                df_all_points['CodPro'] = df_final['CodPro'] if 'CodPro' in df_final.columns else ''
+
+                # Add coordinates
+                df_all_points['Latitude'] = df_final['LAT']
 
                 # Add coordinates
                 df_all_points['Latitude'] = df_final['LAT']
