@@ -169,13 +169,19 @@
         }
 
         .toggle-panel-btn {
-            background: none;
-            border: none;
-            font-size: 20px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            font-size: 12px;  /* REDUCE from 20px */
             cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
+            padding: 2px 6px;  /* ADD padding for better clickability */
+            width: auto;  /* CHANGE from 30px */
+            height: auto;  /* CHANGE from 30px */
+            border-radius: 3px;  /* ADD for better appearance */
+            transition: background 0.2s;  /* ADD hover effect */
+        }
+
+        .toggle-panel-btn:hover {
+            background: #e0e0e0;
         }
 
         .panel-collapsed .lotes-list {
@@ -589,9 +595,9 @@
         }
 
         .lotes-panel.collapsed {
-            max-width: 200px;
-            max-height: 60px;
-            overflow: hidden;
+            max-width: 100px;
+            max-height: 30px;
+            overflow: visible;
         }
 
         .lotes-panel.collapsed .lotes-list {
@@ -704,7 +710,7 @@
     <div class="lotes-panel" id="lotesPanel">
         <h3>
             📊 Controle de Lotes
-            <button class="toggle-panel-btn" onclick="toggleLotesPanel()">▼</button>
+            <button class="toggle-panel-btn" onclick="toggleLotesPanel()" title="Minimizar/Expandir">▼</button>
         </h3>
         <div class="lotes-list" id="lotesList">
             <!-- Lista será preenchida dinamicamente -->
