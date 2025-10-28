@@ -63,6 +63,7 @@
             max-height: 80vh;
             overflow-y: auto;
             z-index: 1000;
+            transition: all 0.3s ease;  /* ADD THIS LINE */
         }
 
         .lotes-panel h3 {
@@ -588,7 +589,9 @@
         }
 
         .lotes-panel.collapsed {
-            width: auto;
+            max-width: 200px;
+            max-height: 60px;
+            overflow: hidden;
         }
 
         .lotes-panel.collapsed .lotes-list {
@@ -605,6 +608,10 @@
     <div id="sidebar">
         <h1>🗺️ Ferramenta de Análise de Lotes</h1>
         
+        <div style="font-size: 11px; color: #999; margin: -10px 0 15px 0;">
+            © 2025 Renan Rocha Ribeiro
+        </div>
+
         <div class="upload-box" id="uploadBox">
             <h2>📁 Carregar Dados</h2>
             <p style="color: #666; font-size: 13px; margin: 10px 0;">
@@ -1797,8 +1804,8 @@
         function toggleLotesPanel() {
             const panel = document.getElementById('lotesPanel');
             const btn = panel.querySelector('.toggle-panel-btn');
-            panel.classList.toggle('panel-collapsed');
-            btn.textContent = panel.classList.contains('panel-collapsed') ? '▶' : '▼';
+            panel.classList.toggle('collapsed');
+            btn.textContent = panel.classList.contains('collapsed') ? '▶' : '▼';
         }
 
         function updateLotesPanel() {
