@@ -922,10 +922,40 @@
             if (map) {
                 map.remove();
             }
-            map = L.map('map').setView([-15.7801, -47.9292], 4); // Brazil center
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            map = L.map('map').setView([-15.7801, -47.9292], 4);
+            
+            // Camadas base
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            });
+            
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                maxZoom: 18
+            });
+            
+            const hybridLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 18
+            });
+            
+            const streetsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 18
+            });
+            
+            // Adicionar camada padrão (satélite)
+            satelliteLayer.addTo(map);
+            
+            // Controle de camadas
+            const baseMaps = {
+                "🗺️ Mapa de Ruas": osmLayer,
+                "🛰️ Satélite": satelliteLayer,
+                "🌍 Híbrido (Satélite + Ruas)": L.layerGroup([hybridLayer, streetsLayer])
+            };
+            
+            L.control.layers(baseMaps).addTo(map);
 
             // Criar handle de toggle do sidebar se não existir
             if (!document.querySelector('.sidebar-toggle')) {
@@ -936,7 +966,6 @@
                 document.body.appendChild(toggleBtn);
             }
         }
-
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const btn = document.querySelector('.sidebar-toggle');
