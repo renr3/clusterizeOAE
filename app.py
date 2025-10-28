@@ -9,42 +9,71 @@ warnings.filterwarnings('ignore')
 
 import requests
 import time
-
 # MUST be first line
 st.set_page_config(
-    page_title="Ferramenta de Análise de Lotes",
-    page_icon="🗺️",
+    page_title="Ferramenta de AnÃ¡lise de Lotes",
+    page_icon="ðŸ—ºï¸",
     layout="wide"  # Critical for maps!
 )
 
 # CSS optimized for map applications
 st.markdown("""
 <style>
-/* Remove Streamlit default padding and margins */
-html, body, [class^="st-"], .main, .block-container {
-    padding: 0 !important;
-    margin: 0 !important;
+/* Remove ALL default Streamlit padding and margins */
+.main > div {
+    padding-top: 0rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
 }
 
-/* Make the main container full height */
-.main .block-container {
+.block-container {
+    padding-top: 0rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
     max-width: 100% !important;
-    height: 100vh !important;
 }
 
-/* Make iframe truly fill available space */
+/* Remove gap between tabs and content */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0px;
+    padding: 0.5rem 1rem 0rem 1rem;
+}
+
+.stTabs [data-baseweb="tab-panel"] {
+    padding: 0px !important;
+}
+
+/* Make iframe truly fill available space without scrollbars */
 iframe {
-    width: 100vw !important;
-    height: 100vh !important;
+    width: 100% !important;
+    height: calc(100vh - 60px) !important;  /* Subtract space for tabs */
     border: none !important;
+    display: block !important;
 }
 
 /* Hide Streamlit footer and branding */
 footer, header, .viewerBadge_container__1QSob {
     display: none !important;
 }
+
+/* Prevent body overflow */
+html, body {
+    overflow-x: hidden !important;
+}
+
+/* Ensure main container doesn't add extra height */
+section[data-testid="stAppViewContainer"] {
+    overflow: hidden !important;
+}
+
+section[data-testid="stAppViewContainer"] > .main {
+    overflow: hidden !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 # Minimal title
 # st.markdown("## 🗺️ Ferramenta de análise de lotes")
