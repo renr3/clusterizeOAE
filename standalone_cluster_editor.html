@@ -955,7 +955,7 @@
                 "🌍 Híbrido (Satélite + Ruas)": L.layerGroup([hybridLayer, streetsLayer])
             };
             
-            L.control.layers(baseMaps).addTo(map);
+            L.control.layers(baseMaps, null, {position: 'bottomleft'}).addTo(map);
 
             // Criar handle de toggle do sidebar se não existir
             if (!document.querySelector('.sidebar-toggle')) {
