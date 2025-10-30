@@ -410,6 +410,11 @@ with tab2:
                 df_all_points['Cluster Label'] = df_final['cluster_label']
                 df_all_points['Unidade Local'] = df_final['Unidade Local']
 
+                df_all_points['Identificação da OAE'] = df_final['Identificação da OAE']
+                df_all_points['Extensão'] = df_final['Extensão']
+                df_all_points['Largura'] = df_final['Largura']
+
+
                 # Add SGE (if exists in original data, otherwise use a default or empty)
                 # Add SGE (if exists in original data, otherwise use a default or empty)
                 if 'Código (SGE)' in df_final.columns:
