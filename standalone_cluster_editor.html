@@ -1970,18 +1970,21 @@
         }
 
         function changeLoteColor(clusterId) {
+            function changeLoteColor(clusterId) {
             const currentColor = colors[clusterId % colors.length];
-            const newColor = prompt('Digite a cor em hexadecimal (ex: #FF5733):', currentColor);
             
-            if (newColor && /^#[0-9A-F]{6}$/i.test(newColor)) {
-                colors[clusterId % colors.length] = newColor;
+            // Create a temporary color input
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.value = currentColor;
+            
+            colorInput.onchange = function() {
+                colors[clusterId % colors.length] = this.value;
                 createMarkers();
                 updateLotesPanel();
-                
-                alert('✅ Cor atualizada com sucesso!');
-            } else if (newColor) {
-                alert('❌ Cor inválida! Use o formato #RRGGBB');
-            }
+            };
+            
+            colorInput.click();
         }
 
         function openMergeModal(clusterId) {
