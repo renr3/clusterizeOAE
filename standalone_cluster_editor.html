@@ -625,6 +625,123 @@
         #sidebar, .lotes-panel, .sidebar-toggle {
             transition: all 0.3s ease;
         }
+
+        /* Modal para inspeÃ§Ã£o de OAEs */
+        .inspect-modal {
+            display: none;  /* Initially hidden */
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .inspect-modal.active {
+            display: flex;  /* Only show as flex when active */
+        }
+
+        .inspect-modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 1999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+        }
+
+        .inspect-modal-header {
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .inspect-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .inspect-modal-close {
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .inspect-modal-close:hover {
+            background: #da190b;
+        }
+
+        .inspect-modal-body {
+            flex: 1;
+            overflow: auto;
+            padding: 0;
+        }
+
+        .inspect-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .inspect-table thead {
+            position: sticky;
+            top: 0;
+            background: #2196F3;
+            color: white;
+            z-index: 10;
+        }
+
+        .inspect-table th {
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 700;
+            border-right: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .inspect-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .inspect-table tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .inspect-table tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .inspect-table tbody tr:nth-child(even):hover {
+            background-color: #f0f0f0;
+        }
+
+        .row-number {
+            background: #e3f2fd;
+            font-weight: 600;
+            text-align: center;
+            width: 40px;
+        }
     </style>
 </head>
 <body>
@@ -721,6 +838,24 @@
     
     <div id="map"></div>
     
+    <!-- Modal para InspeÃ§Ã£o de OAEs -->
+    <div id="inspectModalOverlay" class="inspect-modal-overlay" onclick="closeInspectModal()"></div>
+    <div id="inspectModal" class="inspect-modal">
+        <div class="inspect-modal-header">
+            <div class="inspect-modal-title" id="inspectModalTitle">OAEs do Lote</div>
+            <button class="inspect-modal-close" onclick="closeInspectModal()">&times;</button>
+        </div>
+        <div class="inspect-modal-body">
+            <table class="inspect-table">
+                <thead id="inspectTableHead">
+                    <!-- Headers will be populated dynamically -->
+                </thead>
+                <tbody id="inspectTableBody">
+                    <!-- Rows will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
     
 
     <!-- Painel de Controle de Lotes -->
@@ -1074,7 +1209,7 @@
                             : originalCluster;
                         
                         return {
-                            id: (isOverlay ? 'overlay_' + datasetCounter + '_' : '') + (row['Point ID'] || idx),
+                            id: (isOverlay ? 'sobreposicao_' + datasetCounter + '_' : '') + (row['Point ID'] || idx),
                             lat: parseFloat(row['Latitude'] || row['LAT']),
                             lon: parseFloat(row['Longitude'] || row['LONG']),
                             cluster: adjustedCluster,
@@ -1244,61 +1379,21 @@
                 centroidMarker.bindPopup(`
                     <div style="min-width: 200px;">
                         <strong style="font-size: 14px;">${stats.label}</strong><br>
-                        <strong>Centróide</strong><br>
+                        <strong>CentrÃ³ide</strong><br>
                         Unidade: ${stats.unidade_local}<br>
                         OAEs: ${stats.nPoints}<br>
                         Custo Total: R$ ${stats.totalCost.toLocaleString('pt-BR', {maximumFractionDigits: 0})}<br>
                         <br>
                         <div style="border-top: 2px solid #ddd; margin: 10px 0; padding-top: 10px;">
-                            <strong>🎨 Mudar Cor do Lote</strong><br>
-                            <input type="color" id="colorInput_${clusterId}" value="${color}" 
-                                style="width: 100%; height: 40px; margin: 8px 0; cursor: pointer;">
-                            <button onclick="updateClusterColor(${clusterId}, document.getElementById('colorInput_${clusterId}').value)" 
-                                    style="width: 100%; padding: 8px; background: #4CAF50; color: white; 
-                                        border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                                Aplicar Nova Cor
+                            <button onclick="inspectLoteOAEs(${clusterId})" 
+                                    style="width: 100%; padding: 10px; background: #2196F3; color: white; 
+                                        border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                                Inspecionar OAEs do Lote
                             </button>
                         </div>
                     </div>
                 `);
 
-                // Add click handler for color change
-                // centroidMarker.on('click', function(e) {
-                //     // Prevent map click
-                //     L.DomEvent.stopPropagation(e);
-                    
-                //     // Create color picker popup
-                //     const colorInput = document.createElement('input');
-                //     colorInput.type = 'color';
-                //     colorInput.value = color;
-                //     colorInput.style.width = '100%';
-                //     colorInput.style.height = '40px';
-                //     colorInput.style.cursor = 'pointer';
-                    
-                //     const popup = L.popup()
-                //         .setLatLng(e.latlng)
-                //         .setContent(`
-                //             <div style="text-align: center;">
-                //                 <strong>Mudar cor do ${stats.label}</strong><br>
-                //                 <div id="colorPicker_${clusterId}" style="margin: 10px 0;"></div>
-                //                 <button onclick="updateClusterColor(${clusterId}, document.getElementById('colorInput_${clusterId}').value)" 
-                //                         style="width: 100%; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                //                     Aplicar Nova Cor
-                //                 </button>
-                //             </div>
-                //         `)
-                //         .openOn(map);
-                    
-                //     // Insert color picker after popup opens
-                //     setTimeout(() => {
-                //         const pickerDiv = document.getElementById(`colorPicker_${clusterId}`);
-                //         if (pickerDiv) {
-                //             colorInput.id = `colorInput_${clusterId}`;
-                //             pickerDiv.appendChild(colorInput);
-                //         }
-                //     }, 100);
-                // });
-                
                 centroidMarker.addTo(map);
                 centroidMarkers[clusterId] = centroidMarker;
             });
@@ -1922,7 +2017,7 @@
                     </div>
                     ${!isUnassigned ? `
                         <div class="lote-actions">
-                            <button class="lote-btn lote-btn-color" onclick="changeLoteColor(${clusterInt})">
+                            <button class="lote-btn lote-btn-color" onclick="changeLoteColor(${clusterInt}, event)">
                                 🎨 Cor
                             </button>
                             <button class="lote-btn lote-btn-merge" onclick="openMergeModal(${clusterInt})">
@@ -1969,22 +2064,24 @@
             updateLotesPanel();
         }
 
-        function changeLoteColor(clusterId) {
-            function changeLoteColor(clusterId) {
+        function changeLoteColor(clusterId, event) {
             const currentColor = colors[clusterId % colors.length];
             
-            // Create a temporary color input
-            const colorInput = document.createElement('input');
-            colorInput.type = 'color';
-            colorInput.value = currentColor;
+            const modal = document.createElement('div');
+            const rect = event.target.getBoundingClientRect();
             
-            colorInput.onchange = function() {
-                colors[clusterId % colors.length] = this.value;
-                createMarkers();
-                updateLotesPanel();
-            };
+            modal.style.cssText = `position:fixed; top:${rect.top}px; left:${rect.right + 10}px; background:white; padding:20px; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.3); z-index:3000;`;
             
-            colorInput.click();
+            modal.innerHTML = `
+                <h3>Escolher Cor</h3>
+                <input type="color" id="colorPicker" value="${currentColor}" style="width:100%; height:50px; cursor:pointer;">
+                <div style="margin-top:10px;">
+                    <button onclick="this.parentElement.parentElement.remove()" style="padding:8px 15px; margin-right:5px;">Cancelar</button>
+                    <button onclick="colors[${clusterId} % colors.length]=document.getElementById('colorPicker').value; createMarkers(); updateLotesPanel(); this.parentElement.parentElement.remove();" class="btn-primary" style="padding:8px 15px;">Aplicar</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
         }
 
         function openMergeModal(clusterId) {
@@ -2094,6 +2191,81 @@
                 closeMergeModal();
             }
         }
+    
+    function inspectLoteOAEs(clusterId) {
+        const clusterPoints = pointsData.filter(p => p.cluster === clusterId);
+        
+        if (clusterPoints.length === 0) {
+            alert('Nenhuma OAE encontrada neste lote!');
+            return;
+        }
+        
+        const stats = getClusterStats(clusterId);
+        
+        // Update modal title
+        document.getElementById('inspectModalTitle').textContent = 
+            `OAEs do ${stats.label} (${clusterPoints.length} OAEs)`;
+        
+        // Define columns to display
+        const columns = [
+            { key: 'id', label: 'Point ID' },
+            { key: 'sge', label: 'SGE' },
+            { key: 'rodovia', label: 'Rodovia' },
+            { key: 'km', label: 'km' },
+            { key: 'municipio', label: 'Municí­pio' },
+            // { key: 'cluster_label', label: 'Lote' },
+            { key: 'unidade_local', label: 'Unidade Local' },
+            { key: 'nota', label: 'Nota' },
+            { key: 'lat', label: 'Latitude', format: (val) => val.toFixed(6) },
+            { key: 'lon', label: 'Longitude', format: (val) => val.toFixed(6) },
+            { key: 'custo', label: 'Custo (R$)', format: (val) => val.toLocaleString('pt-BR', {minimumFractionDigits: 2}) },
+            { key: 'status_geral', label: 'Status Geral' },
+            { key: 'status_detalhado', label: 'Status Detalhado' },
+            { key: 'dataset', label: 'Arquivo', format: (val) => datasetFilenames[val] || (val === 0 ? 'Principal' : `Sobreposto ${val}`) }
+        ];
+        
+        // Build table header
+        const thead = document.getElementById('inspectTableHead');
+        thead.innerHTML = `
+            <tr>
+                <th class="row-number">#</th>
+                ${columns.map(col => `<th>${col.label}</th>`).join('')}
+            </tr>
+        `;
+        
+        // Build table body
+        const tbody = document.getElementById('inspectTableBody');
+        tbody.innerHTML = clusterPoints.map((point, index) => `
+            <tr>
+                <td class="row-number">${index + 1}</td>
+                ${columns.map(col => {
+                    const value = point[col.key];
+                    const displayValue = col.format ? col.format(value) : value;
+                    return `<td>${displayValue !== null && displayValue !== undefined ? displayValue : 'N/A'}</td>`;
+                }).join('')}
+            </tr>
+        `).join('');
+        
+        // Show modal
+        document.getElementById('inspectModalOverlay').style.display = 'block';
+        document.getElementById('inspectModal').classList.add('active');
+        
+        // Close any open map popup
+        map.closePopup();
+    }
+
+    function closeInspectModal() {
+        document.getElementById('inspectModalOverlay').style.display = 'none';
+        document.getElementById('inspectModal').classList.remove('active');
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeInspectModal();
+        }
+    });
+
     </script>
 </body>
 </html>
