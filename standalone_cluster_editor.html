@@ -1215,6 +1215,10 @@
                             cluster: adjustedCluster,
                             unidade_local: String(row['Unidade Local'] || 'N/A'),
                             sge: parseInt(row['SGE'] || row['Código (SGE)'] || 0, 10),  // ← MUDADO para parseInt
+                            CodPro: String(row['CodPro'] || 'N/A'),  // ← ADD THIS
+                            IdOAE: String(row['Identificação da OAE'] || 'N/A'),  // ← ADD THIS
+                            Largura: parseFloat(row['Largura'] || 0),  // ← ADD THIS
+                            Extensao: parseFloat(row['Extensão'] || 0),  // ← ADD THIS
                             nota: parseInt(row['Nota Consolidada'] || row['NOTA CONSOLIDADA'] || 0, 10),  // ← MUDADO para parseInt
                             custo: parseFloat(row['Custo Final (R$)'] || row['Custo final'] || 0),
                             cluster_label: String(row['Cluster Label'] || `Cluster ${adjustedCluster}`),
@@ -1883,8 +1887,12 @@
                 'Cluster Label': p.cluster_label,
                 'Unidade Local': p.unidade_local,
                 'SGE': p.sge,
+                'CodPro': p.CodPro,
+                'IdOAE': p.IdOAE,
                 'Latitude': p.lat,
                 'Longitude': p.lon,
+                'Largura': p.largura,
+                'Extensao': p.extensao,
                 'Nota Consolidada': p.nota,
                 'Custo Final (R$)': p.custo,
                 'Rodovia': p.rodovia,
@@ -2207,20 +2215,20 @@
         
         // Define columns to display
         const columns = [
-            { key: 'id', label: 'Point ID' },
+            { key: 'id', label: 'ID' },
             { key: 'sge', label: 'SGE' },
             { key: 'CodPro', label: 'CodPro' },
-            { key: 'Id.OAE', label: 'Identificação da OAE' },
+            { key: 'IdOAE', label: 'Id. da OAE' },
             { key: 'rodovia', label: 'Rodovia' },
             { key: 'km', label: 'km' },
             { key: 'municipio', label: 'Municí­pio' },
             // { key: 'cluster_label', label: 'Lote' },
-            { key: 'unidade_local', label: 'Unidade Local' },
-            { key: 'largura', label: 'Largura' },
-            { key: 'extensao', label: 'Extensão' },
+            { key: 'unidade_local', label: 'UL' },
+            { key: 'Largura', label: 'Largura (m)' },
+            { key: 'Extensao', label: 'Extensão (m)' },
             { key: 'nota', label: 'Nota' },
-            { key: 'lat', label: 'Latitude', format: (val) => val.toFixed(6) },
-            { key: 'lon', label: 'Longitude', format: (val) => val.toFixed(6) },
+            { key: 'lat', label: 'Lat.', format: (val) => val.toFixed(6) },
+            { key: 'lon', label: 'Long.', format: (val) => val.toFixed(6) },
             { key: 'custo', label: 'Custo (R$)', format: (val) => val.toLocaleString('pt-BR', {minimumFractionDigits: 2}) },
             { key: 'status_geral', label: 'Status Geral' },
             { key: 'status_detalhado', label: 'Status Detalhado' },
