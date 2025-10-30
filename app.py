@@ -109,7 +109,7 @@ with tab2:
     with col5:
         tamanhoLoteReferencia = st.number_input(
             "Tamanho do lote de referência",
-            min_value=0, max_value=5, value=0, step=1
+            min_value=0, max_value=100, value=0, step=1
         )
     with col6:
         notaMinima = st.number_input("Nota mínima a ser incluída",min_value=0, max_value=5, value=0, step=1)
@@ -411,8 +411,8 @@ with tab2:
                 df_all_points['Unidade Local'] = df_final['Unidade Local']
 
                 df_all_points['Identificação da OAE'] = df_final['Identificação da OAE']
-                df_all_points['Extensão'] = df_final['# Extensão']
-                df_all_points['Largura'] = df_final['# Largura']
+                df_all_points['Extensão'] = df_final['Extensão']
+                df_all_points['Largura'] = df_final['Largura']
 
 
                 # Add SGE (if exists in original data, otherwise use a default or empty)
