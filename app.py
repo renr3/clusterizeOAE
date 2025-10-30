@@ -412,7 +412,7 @@ with tab2:
 
                 df_all_points['Identificação da OAE'] = df_final['Identificação da OAE']
                 # df_all_points['Extensão'] = df_final['Extensão']
-                # df_all_points['Largura'] = df_final['Largura']
+                df_all_points['Largura'] = df_final['Largura']
 
 
                 # Add SGE (if exists in original data, otherwise use a default or empty)
