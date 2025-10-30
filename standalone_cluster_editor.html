@@ -1379,7 +1379,6 @@
                 centroidMarker.bindPopup(`
                     <div style="min-width: 200px;">
                         <strong style="font-size: 14px;">${stats.label}</strong><br>
-                        <strong>CentrÃ³ide</strong><br>
                         Unidade: ${stats.unidade_local}<br>
                         OAEs: ${stats.nPoints}<br>
                         Custo Total: R$ ${stats.totalCost.toLocaleString('pt-BR', {maximumFractionDigits: 0})}<br>
@@ -2210,11 +2209,15 @@
         const columns = [
             { key: 'id', label: 'Point ID' },
             { key: 'sge', label: 'SGE' },
+            { key: 'CodPro', label: 'CodPro' },
+            { key: 'Id.OAE', label: 'Identificação da OAE' },
             { key: 'rodovia', label: 'Rodovia' },
             { key: 'km', label: 'km' },
             { key: 'municipio', label: 'Municí­pio' },
             // { key: 'cluster_label', label: 'Lote' },
             { key: 'unidade_local', label: 'Unidade Local' },
+            { key: 'largura', label: 'Largura' },
+            { key: 'extensao', label: 'Extensão' },
             { key: 'nota', label: 'Nota' },
             { key: 'lat', label: 'Latitude', format: (val) => val.toFixed(6) },
             { key: 'lon', label: 'Longitude', format: (val) => val.toFixed(6) },

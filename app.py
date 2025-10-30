@@ -79,7 +79,7 @@ section[data-testid="stAppViewContainer"] > .main {
 # st.markdown("## 🗺️ Ferramenta de análise de lotes")
 
 # Create tabs
-tab1, tab2, tab3 = st.tabs(["🗺️ Visualizador", "📗 Gerar Excel com dados iniciais", "📖 Instruções"])
+tab1, tab2, tab3 = st.tabs(["🗺️ Visualizador", "📗 Análise prévia", "📖 Instruções"])
 
 with tab2:
     st.header("Carregar os arquivos-base")
@@ -514,12 +514,12 @@ with tab3:
         - Latitude, Longitude, Nota Consolidada, Custo Final (R$)
         - Rodovia, km, Município, Status Geral, Status Detalhado
     
-    ### 🗺️ 3. Visualizador
+    ### 🗺️ 2. Visualizador
     - De posse do arquivo Excel gerado, abra a aba "Visualizador"
     - O Visualizador carrega o arquivo Excel e apresenta os dados em um mapa interativo
     - O Visualizador também permite editar manualmente os lotes diretamente no mapa
     
-    ### 💾 4. Exportar resultados
+    ### 💾 3. Exportar resultados
     - Clique em "Exportar para Excel" para baixar o arquivo editado
     - O arquivo conterá todas as suas modificações manuais
     """)
