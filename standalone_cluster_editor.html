@@ -682,9 +682,14 @@
             height: 30px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .inspect-modal-close svg {
+            pointer-events: none;  /* Ensures clicks go through to button */
         }
 
         .inspect-modal-close:hover {
@@ -742,6 +747,107 @@
             text-align: center;
             width: 40px;
         }
+
+        .inspect-modal-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 50%, #999 50%);
+            border-bottom-right-radius: 8px;
+        }
+
+        .inspect-modal-resize-handle::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid #666;
+            border-bottom: 2px solid #666;
+        }
+
+        .inspect-modal-header {
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move; /* ← ADD THIS to indicate draggable */
+            user-select: none; /* ← ADD THIS to prevent text selection while dragging */
+        }
+
+        .inspect-modal.dragging {
+            cursor: move;
+        }
+
+        .inspect-modal.resizing {
+            cursor: nwse-resize;
+        }
+
+        .inspect-modal-header:active {
+            cursor: grabbing;
+        }
+
+
+        .overlay-box.collapsed {
+        padding: 10px 15px;
+    }
+
+    .inspect-table th {
+        padding: 12px 8px;
+        text-align: left;
+        font-weight: 700;
+        border-right: 1px solid rgba(255,255,255,0.3);
+        cursor: move; /* ADD THIS */
+        user-select: none; /* ADD THIS */
+        position: relative; /* ADD THIS */
+    }
+
+    .inspect-table th.dragging {
+        opacity: 0.5;
+        background: #1976D2;
+    }
+
+    .inspect-table th.drag-over {
+        border-left: 3px solid #FFD700;
+    }
+
+    .overlay-box h2 {
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0;
+        padding: 5px 0;
+    }
+
+    .overlay-toggle-icon {
+        font-size: 14px;
+        transition: transform 0.3s ease;
+    }
+
+    .overlay-box.collapsed .overlay-toggle-icon {
+        transform: rotate(-90deg);
+    }
+
+    .overlay-content {
+        max-height: 500px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+        opacity: 1;
+        margin-top: 10px;
+    }
+
+    .overlay-box.collapsed .overlay-content {
+        max-height: 0;
+        opacity: 0;
+        margin-top: 0;
+    }
     </style>
 </head>
 <body>
@@ -751,6 +857,8 @@
         <div style="font-size: 11px; color: #999; margin: -10px 0 15px 0;">
             © 2025 Renan Rocha Ribeiro
         </div>
+
+        
 
         <div class="upload-box" id="uploadBox">
             <h2>📁 Carregar Dados</h2>
@@ -762,14 +870,19 @@
             <div id="loadStatus"></div>
         </div>
 
-        <div id="overlaySection" class="overlay-box">
-            <h2>➕ Sobrepor Dados Adicionais</h2>
-            <p style="color: #666; font-size: 13px; margin: 10px 0;">
-                Adicione outro arquivo Excel para sobrepor ao mapa atual.
-            </p>
-            <input type="file" id="overlayFileInput" accept=".xlsx">
-            <button id="overlayBtn" class="btn-warning">Sobrepor Arquivo</button>
-            <div id="overlayStatus"></div>
+        <div id="overlaySection" class="overlay-box collapsed">
+            <h2 onclick="toggleOverlaySection()">
+                ➕ Sobrepor Dados Adicionais
+                <span class="overlay-toggle-icon">▼</span>
+            </h2>
+            <div class="overlay-content">
+                <p style="color: #666; font-size: 13px; margin: 10px 0;">
+                    Adicione outro arquivo Excel para sobrepor ao mapa atual.
+                </p>
+                <input type="file" id="overlayFileInput" accept=".xlsx">
+                <button id="overlayBtn" class="btn-warning">Sobrepor Arquivo</button>
+                <div id="overlayStatus"></div>
+            </div>
         </div>
         
         <div id="emptyState" class="empty-state">
@@ -835,28 +948,41 @@
             <button id="clearBtn" class="btn-danger" style="margin-top: 10px;">🗑️ Limpar Dados</button>
         </div>
     </div>
-    
+
     <div id="map"></div>
     
     <!-- Modal para InspeÃ§Ã£o de OAEs -->
     <div id="inspectModalOverlay" class="inspect-modal-overlay" onclick="closeInspectModal()"></div>
-    <div id="inspectModal" class="inspect-modal">
-        <div class="inspect-modal-header">
-            <div class="inspect-modal-title" id="inspectModalTitle">OAEs do Lote</div>
-            <button class="inspect-modal-close" onclick="closeInspectModal()">&times;</button>
+        <div id="inspectModal" class="inspect-modal">
+            <div class="inspect-modal-header" id="inspectModalHeader">
+                <div class="inspect-modal-title" id="inspectModalTitle">OAEs do Lote</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="exportLoteToExcel()" 
+                            style="background: #4CAF50; color: white; padding: 8px 15px; 
+                                border: none; border-radius: 4px; cursor: pointer; 
+                                font-weight: 600; font-size: 13px; display: flex; 
+                                align-items: center; gap: 5px;">
+                        📊 Exportar para Excel
+                    </button>
+                    <button class="inspect-modal-close" onclick="closeInspectModal()">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="inspect-modal-body">
+                <table class="inspect-table">
+                    <thead id="inspectTableHead">
+                        <!-- Headers will be populated dynamically -->
+                    </thead>
+                    <tbody id="inspectTableBody">
+                        <!-- Rows will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="inspect-modal-resize-handle" id="inspectModalResizeHandle"></div>
         </div>
-        <div class="inspect-modal-body">
-            <table class="inspect-table">
-                <thead id="inspectTableHead">
-                    <!-- Headers will be populated dynamically -->
-                </thead>
-                <tbody id="inspectTableBody">
-                    <!-- Rows will be populated dynamically -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
 
     <!-- Painel de Controle de Lotes -->
     <div class="lotes-panel" id="lotesPanel">
@@ -897,6 +1023,7 @@
         let datasetFilenames = {}; // Add this line
         let hiddenClusters = new Set(); // Clusters ocultos
         let mergeSourceCluster = null; // Cluster sendo mesclado
+        let currentInspectedCluster = null; // ADD THIS LINE
 
         // Add the helper functions at the top of the script section:
         function generateHighContrastColors (n) {
@@ -1074,6 +1201,12 @@
                 map.remove();
             }
             map = L.map('map').setView([-15.7801, -47.9292], 4);
+
+            map.on('click', function(e) {
+                // Only clear if not clicking on a marker
+                // (markers will handle their own click events)
+                clearPointSelection();
+            });
             
             // Camadas base
             const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1396,7 +1529,7 @@
                         </div>
                     </div>
                 `);
-
+                centroidMarker.on('click', () => clearPointSelection());
                 centroidMarker.addTo(map);
                 centroidMarkers[clusterId] = centroidMarker;
             });
@@ -2200,6 +2333,7 @@
         }
     
     function inspectLoteOAEs(clusterId) {
+        currentInspectedCluster = clusterId; // ADD THIS LINE
         const clusterPoints = pointsData.filter(p => p.cluster === clusterId);
         
         if (clusterPoints.length === 0) {
@@ -2221,8 +2355,7 @@
             { key: 'IdOAE', label: 'Id. da OAE' },
             { key: 'rodovia', label: 'Rodovia' },
             { key: 'km', label: 'km' },
-            { key: 'municipio', label: 'Municí­pio' },
-            // { key: 'cluster_label', label: 'Lote' },
+            { key: 'municipio', label: 'Município' },
             { key: 'unidade_local', label: 'UL' },
             { key: 'Largura', label: 'Largura (m)' },
             { key: 'Extensao', label: 'Extensão (m)' },
@@ -2234,28 +2367,36 @@
             { key: 'status_detalhado', label: 'Status Detalhado' },
             { key: 'dataset', label: 'Arquivo', format: (val) => datasetFilenames[val] || (val === 0 ? 'Principal' : `Sobreposto ${val}`) }
         ];
-        
+
+        // Apply custom column order if it exists
+        const orderedColumns = columnOrder 
+            ? columnOrder.map(idx => columns[idx])
+            : columns;
+
         // Build table header
         const thead = document.getElementById('inspectTableHead');
         thead.innerHTML = `
             <tr>
                 <th class="row-number">#</th>
-                ${columns.map(col => `<th>${col.label}</th>`).join('')}
+                ${orderedColumns.map(col => `<th>${col.label}</th>`).join('')}
             </tr>
         `;
-        
+
         // Build table body
         const tbody = document.getElementById('inspectTableBody');
         tbody.innerHTML = clusterPoints.map((point, index) => `
             <tr>
                 <td class="row-number">${index + 1}</td>
-                ${columns.map(col => {
+                ${orderedColumns.map(col => {
                     const value = point[col.key];
                     const displayValue = col.format ? col.format(value) : value;
                     return `<td>${displayValue !== null && displayValue !== undefined ? displayValue : 'N/A'}</td>`;
                 }).join('')}
             </tr>
         `).join('');
+
+        // Make headers draggable - ADD THIS LINE
+        makeTableHeadersDraggable();
         
         // Show modal
         document.getElementById('inspectModalOverlay').style.display = 'block';
@@ -2268,6 +2409,106 @@
     function closeInspectModal() {
         document.getElementById('inspectModalOverlay').style.display = 'none';
         document.getElementById('inspectModal').classList.remove('active');
+        currentInspectedCluster = null; // ADD THIS LINE
+    }
+
+    function exportLoteToExcel() {
+        if (currentInspectedCluster === null) {
+            alert('Nenhum lote selecionado para exportar!');
+            return;
+        }
+        
+        // Get the cluster points
+        const clusterPoints = pointsData.filter(p => p.cluster === currentInspectedCluster);
+        
+        if (clusterPoints.length === 0) {
+            alert('Nenhuma OAE encontrada neste lote!');
+            return;
+        }
+        
+        const stats = getClusterStats(currentInspectedCluster);
+        
+        // Define columns (same structure as in the table)
+        const columns = [
+            { key: 'id', label: 'ID' },
+            { key: 'sge', label: 'SGE' },
+            { key: 'CodPro', label: 'CodPro' },
+            { key: 'IdOAE', label: 'Id. da OAE' },
+            { key: 'rodovia', label: 'Rodovia' },
+            { key: 'km', label: 'km' },
+            { key: 'municipio', label: 'Município' },
+            { key: 'unidade_local', label: 'UL' },
+            { key: 'Largura', label: 'Largura (m)' },
+            { key: 'Extensao', label: 'Extensão (m)' },
+            { key: 'nota', label: 'Nota' },
+            { key: 'lat', label: 'Lat.', format: (val) => val.toFixed(6) },
+            { key: 'lon', label: 'Long.', format: (val) => val.toFixed(6) },
+            { key: 'custo', label: 'Custo (R$)', format: (val) => val },
+            { key: 'status_geral', label: 'Status Geral' },
+            { key: 'status_detalhado', label: 'Status Detalhado' },
+            { key: 'dataset', label: 'Arquivo', format: (val) => datasetFilenames[val] || (val === 0 ? 'Principal' : `Sobreposto ${val}`) }
+        ];
+        
+        // Apply custom column order if it exists
+        const orderedColumns = columnOrder 
+            ? columnOrder.map(idx => columns[idx])
+            : columns;
+        
+        // Prepare data for Excel with custom column order
+        const exportData = clusterPoints.map((point, index) => {
+            const row = { '#': index + 1 };
+            
+            orderedColumns.forEach(col => {
+                const value = point[col.key];
+                const displayValue = col.format ? col.format(value) : value;
+                row[col.label] = displayValue !== null && displayValue !== undefined ? displayValue : 'N/A';
+            });
+            
+            return row;
+        });
+        
+        // Create summary data
+        const summaryData = [{
+            'Lote': stats.label,
+            'Unidade Local': stats.unidade_local,
+            'Total de OAEs': stats.nPoints,
+            'Custo Total (R$)': stats.totalCost,
+            'Custo Médio (R$)': stats.avgCost
+        }];
+        
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Add detailed data sheet
+        const wsData = XLSX.utils.json_to_sheet(exportData);
+        XLSX.utils.book_append_sheet(wb, wsData, 'OAEs');
+        
+        // Add summary sheet
+        const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
+        
+        
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `${stats.label.replace(/[/\\?%*:|"<>]/g, '-')}_${timestamp}.xlsx`;
+        
+        // Download file
+        XLSX.writeFile(wb, filename);
+        
+        // Show success message
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'success-message';
+        statusDiv.innerHTML = `✅ Arquivo exportado: ${filename}`;
+        statusDiv.style.position = 'fixed';
+        statusDiv.style.top = '20px';
+        statusDiv.style.right = '20px';
+        statusDiv.style.zIndex = '10000';
+        statusDiv.style.maxWidth = '400px';
+        document.body.appendChild(statusDiv);
+        
+        setTimeout(() => {
+            statusDiv.remove();
+        }, 3000);
     }
 
     // Close modal with Escape key
@@ -2276,6 +2517,315 @@
             closeInspectModal();
         }
     });
+
+    // Draggable modal functionality
+    // Draggable and Resizable modal functionality
+    (function() {
+        let isDragging = false;
+        let isResizing = false;
+        let dragOffsetX;
+        let dragOffsetY;
+        let initialWidth;
+        let initialHeight;
+        let initialLeft;
+        let initialTop;
+        let initialMouseX;
+        let initialMouseY;
+
+        const modal = document.getElementById('inspectModal');
+        const header = document.getElementById('inspectModalHeader');
+        const resizeHandle = document.getElementById('inspectModalResizeHandle');
+
+        // Dragging functionality
+        header.addEventListener('mousedown', dragStart);
+
+        function dragStart(e) {
+            // Don't drag if clicking the close button
+            if (e.target.classList.contains('inspect-modal-close')) {
+                return;
+            }
+
+            isDragging = true;
+            modal.classList.add('dragging');
+            
+            // Get current position of the modal
+            const rect = modal.getBoundingClientRect();
+            
+            // Calculate offset between mouse and modal's top-left corner
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+
+            // Remove transform-based centering
+            modal.style.transform = 'none';
+            modal.style.left = rect.left + 'px';
+            modal.style.top = rect.top + 'px';
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+            
+            e.preventDefault();
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+
+            e.preventDefault();
+
+            // Calculate new position maintaining cursor offset
+            const newLeft = e.clientX - dragOffsetX;
+            const newTop = e.clientY - dragOffsetY;
+
+            // Apply boundaries to keep modal on screen
+            const maxLeft = window.innerWidth - modal.offsetWidth;
+            const maxTop = window.innerHeight - modal.offsetHeight;
+
+            modal.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
+            modal.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
+        }
+
+        function dragEnd() {
+            isDragging = false;
+            modal.classList.remove('dragging');
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        // Resizing functionality
+        resizeHandle.addEventListener('mousedown', resizeStart);
+
+        function resizeStart(e) {
+            isResizing = true;
+            modal.classList.add('resizing');
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Get current dimensions and position
+            const rect = modal.getBoundingClientRect();
+            initialWidth = rect.width;
+            initialHeight = rect.height;
+            initialLeft = rect.left;
+            initialTop = rect.top;
+            initialMouseX = e.clientX;
+            initialMouseY = e.clientY;
+
+            // Remove transform if present
+            modal.style.transform = 'none';
+            modal.style.left = initialLeft + 'px';
+            modal.style.top = initialTop + 'px';
+
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', resizeEnd);
+        }
+
+        function resize(e) {
+            if (!isResizing) return;
+
+            e.preventDefault();
+
+            // Calculate change in mouse position
+            const deltaX = e.clientX - initialMouseX;
+            const deltaY = e.clientY - initialMouseY;
+
+            // Calculate new dimensions (expanding from bottom-right only)
+            const newWidth = Math.max(400, initialWidth + deltaX);
+            const newHeight = Math.max(300, initialHeight + deltaY);
+
+            // Apply new dimensions
+            modal.style.width = newWidth + 'px';
+            modal.style.height = newHeight + 'px';
+            modal.style.maxWidth = 'none'; // Remove max-width constraint when resizing
+
+            // Keep top-left position fixed
+            modal.style.left = initialLeft + 'px';
+            modal.style.top = initialTop + 'px';
+        }
+
+        function resizeEnd() {
+            isResizing = false;
+            modal.classList.remove('resizing');
+            document.removeEventListener('mousemove', resize);
+            document.removeEventListener('mouseup', resizeEnd);
+        }
+
+        // Reset position and size when modal is closed and reopened
+        const originalCloseInspectModal = window.closeInspectModal;
+        window.closeInspectModal = function() {
+            originalCloseInspectModal();
+            // Reset position and size to centered
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.left = '50%';
+            modal.style.top = '50%';
+            modal.style.width = '90%';
+            modal.style.height = '80vh';
+            modal.style.maxWidth = '1200px';
+        };
+    })();
+
+    function toggleOverlaySection() {
+        const section = document.getElementById('overlaySection');
+        section.classList.toggle('collapsed');
+    }
+
+    function clearPointSelection() {
+        selectedPoint = null;
+        
+        // Clear the selected point info
+        document.getElementById('selectedPoint').innerHTML = 
+            'Clique em uma OAE para selecioná-la';
+        
+        // Clear current cluster info
+        document.getElementById('currentClusterInfo').innerHTML = '';
+        
+        // Hide reassignment controls
+        document.getElementById('reassignControl').style.display = 'none';
+        
+        // Clear target cluster info
+        document.getElementById('targetClusterInfo').innerHTML = '';
+    }
+
+    // Add this global variable at the top with other globals
+    let columnOrder = null; // Will store custom column order
+
+    // Add this function after the inspectLoteOAEs function
+    function makeTableHeadersDraggable() {
+        const thead = document.getElementById('inspectTableHead');
+        const headers = thead.querySelectorAll('th:not(.row-number)');
+        
+        headers.forEach((header, index) => {
+            header.draggable = true;
+            header.dataset.columnIndex = index;
+            
+            header.addEventListener('dragstart', function(e) {
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', this.dataset.columnIndex);
+            });
+            
+            header.addEventListener('dragend', function(e) {
+                this.classList.remove('dragging');
+                // Remove all drag-over classes
+                headers.forEach(h => h.classList.remove('drag-over'));
+            });
+            
+            header.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                // Remove drag-over from all headers
+                headers.forEach(h => h.classList.remove('drag-over'));
+                // Add to current target
+                this.classList.add('drag-over');
+            });
+            
+            header.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                const targetIndex = parseInt(this.dataset.columnIndex);
+                
+                if (draggedIndex !== targetIndex) {
+                    reorderColumns(draggedIndex, targetIndex);
+                }
+            });
+        });
+    }
+
+    function reorderColumns(fromIndex, toIndex) {
+        // Initialize column order if not already set
+        if (!columnOrder) {
+            // Create initial order based on number of columns
+            // We need to get the column count from the actual columns array
+            const columns = [
+                { key: 'id', label: 'ID' },
+                { key: 'sge', label: 'SGE' },
+                { key: 'CodPro', label: 'CodPro' },
+                { key: 'IdOAE', label: 'Id. da OAE' },
+                { key: 'rodovia', label: 'Rodovia' },
+                { key: 'km', label: 'km' },
+                { key: 'municipio', label: 'Município' },
+                { key: 'unidade_local', label: 'UL' },
+                { key: 'Largura', label: 'Largura (m)' },
+                { key: 'Extensao', label: 'Extensão (m)' },
+                { key: 'nota', label: 'Nota' },
+                { key: 'lat', label: 'Lat.' },
+                { key: 'lon', label: 'Long.' },
+                { key: 'custo', label: 'Custo (R$)' },
+                { key: 'status_geral', label: 'Status Geral' },
+                { key: 'status_detalhado', label: 'Status Detalhado' },
+                { key: 'dataset', label: 'Arquivo' }
+            ];
+            columnOrder = columns.map((_, idx) => idx);
+        }
+        
+        // Reorder the columnOrder array
+        const [movedItem] = columnOrder.splice(fromIndex, 1);
+        columnOrder.splice(toIndex, 0, movedItem);
+        
+        // Rebuild the table with new order
+        rebuildInspectionTable();
+    }
+    function rebuildInspectionTable() {
+        if (currentInspectedCluster === null) return;
+        
+        // Get the cluster points
+        const clusterPoints = pointsData.filter(p => p.cluster === currentInspectedCluster);
+        
+        if (clusterPoints.length === 0) return;
+        
+        const stats = getClusterStats(currentInspectedCluster);
+        
+        // Define columns (same as in inspectLoteOAEs)
+        const columns = [
+            { key: 'id', label: 'ID' },
+            { key: 'sge', label: 'SGE' },
+            { key: 'CodPro', label: 'CodPro' },
+            { key: 'IdOAE', label: 'Id. da OAE' },
+            { key: 'rodovia', label: 'Rodovia' },
+            { key: 'km', label: 'km' },
+            { key: 'municipio', label: 'Município' },
+            { key: 'unidade_local', label: 'UL' },
+            { key: 'Largura', label: 'Largura (m)' },
+            { key: 'Extensao', label: 'Extensão (m)' },
+            { key: 'nota', label: 'Nota' },
+            { key: 'lat', label: 'Lat.', format: (val) => val.toFixed(6) },
+            { key: 'lon', label: 'Long.', format: (val) => val.toFixed(6) },
+            { key: 'custo', label: 'Custo (R$)', format: (val) => val.toLocaleString('pt-BR', {minimumFractionDigits: 2}) },
+            { key: 'status_geral', label: 'Status Geral' },
+            { key: 'status_detalhado', label: 'Status Detalhado' },
+            { key: 'dataset', label: 'Arquivo', format: (val) => datasetFilenames[val] || (val === 0 ? 'Principal' : `Sobreposto ${val}`) }
+        ];
+        
+        // Apply custom column order if it exists
+        const orderedColumns = columnOrder 
+            ? columnOrder.map(idx => columns[idx])
+            : columns;
+        
+        // Build table header
+        const thead = document.getElementById('inspectTableHead');
+        thead.innerHTML = `
+            <tr>
+                <th class="row-number">#</th>
+                ${orderedColumns.map((col, idx) => `<th data-column-index="${idx}">${col.label}</th>`).join('')}
+            </tr>
+        `;
+        
+        // Build table body
+        const tbody = document.getElementById('inspectTableBody');
+        tbody.innerHTML = clusterPoints.map((point, index) => `
+            <tr>
+                <td class="row-number">${index + 1}</td>
+                ${orderedColumns.map(col => {
+                    const value = point[col.key];
+                    const displayValue = col.format ? col.format(value) : value;
+                    return `<td>${displayValue !== null && displayValue !== undefined ? displayValue : 'N/A'}</td>`;
+                }).join('')}
+            </tr>
+        `).join('');
+        
+        // Make headers draggable
+        makeTableHeadersDraggable();
+    }
 
     </script>
 </body>

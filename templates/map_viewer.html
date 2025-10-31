@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Ferramenta de Análise de Lotes - Independente</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- External CSS Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS will be injected here by app.py -->
+    
+    <!-- External JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- ===== SIDEBAR ===== -->
+    <div id="sidebar">
+        <h1>🗺️ Ferramenta de Análise de Lotes</h1>
+        
+        <div style="font-size: 11px; color: #999; margin: -10px 0 15px 0;">
+            © 2025 Renan Rocha Ribeiro
+        </div>
+
+        <!-- Upload Box -->
+        <div class="upload-box" id="uploadBox">
+            <h2>📁 Carregar Dados</h2>
+            <p style="color: #666; font-size: 13px; margin: 10px 0;">
+                Selecione um arquivo Excel (.xlsx) com os dados dos OAEs e lotes.
+            </p>
+            <input type="file" id="fileInput" accept=".xlsx">
+            <button id="loadBtn" class="btn-primary">Carregar Arquivo</button>
+            <div id="loadStatus"></div>
+        </div>
+
+        <!-- Overlay Section -->
+        <div id="overlaySection" class="overlay-box collapsed">
+            <h2 onclick="toggleOverlaySection()">
+                ➕ Sobrepor Dados Adicionais
+                <span class="overlay-toggle-icon">▼</span>
+            </h2>
+            <div class="overlay-content">
+                <p style="color: #666; font-size: 13px; margin: 10px 0;">
+                    Adicione outro arquivo Excel para sobrepor ao mapa atual.
+                </p>
+                <input type="file" id="overlayFileInput" accept=".xlsx">
+                <button id="overlayBtn" class="btn-warning">Sobrepor Arquivo</button>
+                <div id="overlayStatus"></div>
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>Nenhum dado carregado</h3>
+            <p>Carregue um arquivo Excel para começar a análise</p>
+        </div>
+        
+        <!-- Content (shown after loading) -->
+        <div id="content">
+            <div class="success-message" id="loadedMessage" style="display:none;">
+                ✅ Dados carregados com sucesso!
+            </div>
+            
+            <!-- Point Selection Control -->
+            <div class="control-box">
+                <h2>OAE selecionada</h2>
+                <div id="selectedPoint">Clique em uma OAE para selecioná-la</div>
+                <div id="currentClusterInfo"></div>
+                
+                <div id="reassignControl" style="display:none;">
+                    <div class="divider"></div>
+                    <h2>Reatribuir ao Lote</h2>
+                    <select id="targetCluster"></select>
+                    <div id="targetClusterInfo"></div>
+                    <button id="reassignBtn">Reatribuir OAE</button>
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="stats-box">
+                <h2>Estatísticas Gerais</h2>
+                <div class="stat-item">
+                    <span class="stat-label">Total de OAEs:</span>
+                    <span class="stat-value" id="totalPoints">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">OAEs principais:</span>
+                    <span class="stat-value" id="primaryPoints">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">OAEs sobrepostas:</span>
+                    <span class="stat-value" id="overlayPoints">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total de lotes:</span>
+                    <span class="stat-value" id="totalClusters">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Custo Total:</span>
+                    <span class="stat-value" id="totalCost">-</span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <button id="exportBtn" class="btn-primary">📊 Exportar para Excel</button>
+            <button id="clearBtn" class="btn-danger" style="margin-top: 10px;">🗑️ Limpar Dados</button>
+        </div>
+    </div>
+    
+    <!-- ===== MAP ===== -->
+    <div id="map"></div>
+    
+    <!-- ===== LOTES PANEL ===== -->
+    <div class="lotes-panel" id="lotesPanel">
+        <h3>
+            📊 Controle de Lotes
+            <button class="toggle-panel-btn" onclick="toggleLotesPanel()" title="Minimizar/Expandir">▼</button>
+        </h3>
+        <div class="lotes-list" id="lotesList">
+            <!-- Lista será preenchida dinamicamente -->
+        </div>
+    </div>
+
+    <!-- ===== MERGE MODAL ===== -->
+    <div id="mergeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Mesclar Lotes</div>
+            <p>Selecione o lote de destino:</p>
+            <select id="mergeTargetSelect" style="width: 100%; padding: 8px; margin: 10px 0;">
+            </select>
+            <div class="modal-buttons">
+                <button onclick="closeMergeModal()" style="padding: 8px 15px;">Cancelar</button>
+                <button onclick="confirmMerge()" class="btn-primary" style="padding: 8px 15px;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== INSPECT MODAL ===== -->
+    <div id="inspectModalOverlay" class="inspect-modal-overlay" onclick="closeInspectModal()"></div>
+    <div id="inspectModal" class="inspect-modal">
+        <div class="inspect-modal-header" id="inspectModalHeader">
+            <div class="inspect-modal-title" id="inspectModalTitle">OAEs do Lote</div>
+            <button class="inspect-modal-close" onclick="closeInspectModal()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="inspect-modal-body">
+            <table class="inspect-table">
+                <thead id="inspectTableHead">
+                    <!-- Headers will be populated dynamically -->
+                </thead>
+                <tbody id="inspectTableBody">
+                    <!-- Rows will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        <div class="inspect-modal-resize-handle" id="inspectModalResizeHandle"></div>
+    </div>
+
+    <!-- Custom JavaScript will be injected here by app.py -->
+</body>
+</html>
