@@ -110,8 +110,17 @@ section[data-testid="stAppViewContainer"] > .main {
 """, unsafe_allow_html=True)
 
 
-# Minimal title
-# st.markdown("## 🗺️ Ferramenta de análise de lotes")
+# Must come before any Streamlit elements
+st.markdown("""
+    <style>
+        /* Increase horizontal space between tab labels */
+        div[data-baseweb="tab-list"] > button {
+            margin-right: 20px;  /* change value as needed */
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # Create tabs
 tab1, tab2, tab3 = st.tabs(["🗺️ Visualizador", "📗 Análise prévia", "📖 Instruções"])
