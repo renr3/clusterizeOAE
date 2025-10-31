@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # 🗺️ Ferramenta de Análise de Lotes de OAEs
 
 Uma ferramenta interativa para visualização e edição de loteamentos de Obras de Arte Especiais (OAEs - pontes e viadutos) baseada em clustering geoespacial.
