@@ -128,7 +128,7 @@ pip install streamlit pandas numpy scikit-learn openpyxl requests
 
 3. Execute a aplicação:
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 4. Acesse no navegador:
@@ -148,10 +148,11 @@ http://localhost:8501
 
 ### Passo 2: Visualizar e Editar
 1. Acesse a aba "🗺️ Visualizador"
-2. O mapa carregará automaticamente com o resultado da análise
-3. Explore o mapa, clique nos marcadores para ver detalhes
-4. Use o painel lateral para reatribuir OAEs
-5. Use o painel de controle de lotes (canto superior direito) para:
+2. Carregue o arquivo Excel com uma análise prévia realizada (ou, ao menos, formatado de acordo com o Excel gerado pela ferramenta de análise prévia)
+3. O mapa carregará automaticamente com o resultado da análise
+4. Explore o mapa, clique nos marcadores para ver detalhes
+5. Use o painel lateral para reatribuir OAEs
+6. Use o painel de controle de lotes (canto superior direito) para:
    - Mostrar/ocultar lotes
    - Alterar cores
    - Mesclar ou excluir lotes
@@ -187,16 +188,12 @@ Contribuições são bem-vindas! Para contribuir:
 
 ## 📝 Licença
 
-[Adicione aqui a licença do seu projeto]
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 👤 Autor
 
 © 2025 Renan Rocha Ribeiro
 
-## 📧 Contato
-
-[Adicione suas informações de contato]
-
 ---
 
-**Nota**: Esta ferramenta foi desenvolvida para auxiliar na organização de lotes de inspeção de OAEs. Os resultados do clustering automático devem ser revisados e ajustados manualmente conforme necessário.
+**Nota**: Esta ferramenta foi desenvolvida para auxiliar na organização de lotes de inspeção de OAEs no âmbito do PROARTE/DNIT. Os resultados do clustering automático devem ser revisados e ajustados manualmente conforme necessário.
